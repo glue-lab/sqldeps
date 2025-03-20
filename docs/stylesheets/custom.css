@@ -1,0 +1,27 @@
+/* Primary theme color customization */
+:root {
+    --md-primary-fg-color: #bf050b;
+    --md-primary-fg-color--light: #e01b22;
+    --md-primary-fg-color--dark: #8f0408;
+    
+    /* Ensure text has sufficient contrast */
+    --md-primary-bg-color: #ffffff;
+    --md-primary-bg-color--light: #ffffff;
+  }
+
+  /* Make sure text on primary color background is visible */
+  .md-header {
+    color: var(--md-primary-bg-color);
+  }
+
+  /* Direct link color overrides */
+.md-typeset a {
+  color: #0066cc !important;
+}
+.md-typeset a:hover {
+    color: #111111 !important;
+}
+
+.md-typeset a:hover {
+    text-decoration: underline;
+}
