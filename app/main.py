@@ -66,9 +66,7 @@ def main() -> None:  # noqa: C901
         db_config["port"] = st.sidebar.number_input(
             "Port", value=5432, min_value=1, max_value=65535
         )
-        db_config["database"] = st.sidebar.text_input(
-            "Database Name"
-        )
+        db_config["database"] = st.sidebar.text_input("Database Name")
         db_config["username"] = st.sidebar.text_input("Username")
         # Password is handled through .env or ~/.pgpass
         db_target_schemas = st.sidebar.text_input(
