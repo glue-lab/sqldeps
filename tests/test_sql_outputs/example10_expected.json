@@ -1,0 +1,15 @@
+{
+    "dependencies": {
+        "customers": ["customer_name", "id"],
+        "employees": ["*"],
+        "logs": [],
+        "my_db.orders": ["order_date", "order_id", "total_amount"],
+        "products": ["product_id", "product_name"],
+        "reports.sales_report": ["customer_name", "product_name", "sale_id"],
+        "sales": ["amount", "customer_id", "id"]
+    },
+    "outputs": {
+      "logs": [],
+      "reports.sales_report": ["customer_name", "product_name", "sale_id"]
+    }
+}

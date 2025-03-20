@@ -1,0 +1,7 @@
+{
+    "tables": ["my_db.users", "orders"],
+    "columns": {
+      "my_db.users": ["id", "name"],
+      "orders": ["order_id", "user_id"]
+    }
+}

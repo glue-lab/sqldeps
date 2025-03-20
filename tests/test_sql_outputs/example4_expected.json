@@ -1,0 +1,9 @@
+{
+    "dependencies": {
+        "my_db.users": ["email", "id", "name", "status"],
+        "orders": ["order_date", "order_id", "order_type", "priority_level", "shipping_status", "total_amount", "user_id"]
+    },
+    "outputs": {
+      
+    }
+}

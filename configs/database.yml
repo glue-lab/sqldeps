@@ -1,0 +1,5 @@
+database:
+  host: 52.14.34.84
+  port: 5432
+  database: gibbs-5.0
+  username: cainas

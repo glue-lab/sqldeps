@@ -1,0 +1,4 @@
+model:
+  llama-3.3-70b-versatile
+params:
+  temperature: 0

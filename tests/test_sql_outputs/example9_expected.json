@@ -1,0 +1,11 @@
+{
+    "dependencies": {
+        "orders": ["user_id"],
+        "pgi_shape_clusters": ["PropertyGroupId", "ShapeCluster", "ShapeGroupId"],
+        "spatial.Shape": ["ShapeId", "geom"],
+        "users": ["id", "name"]
+    },
+    "outputs": {
+      "pgi_shape_geom_clusters": ["PropertyGroupId", "ShapeCluster", "ShapeGroupId", "geom"]
+    }
+}

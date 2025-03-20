@@ -1,0 +1,63 @@
+site_name: SQLDeps
+site_description: SQL Dependency Extractor using Large Language Models
+site_author: Cainã Max Couto da Silva
+repo_url: https://github.com/glue-lab/sqldeps
+repo_name: glue-lab/sqldeps
+
+extra_css:
+  - stylesheets/custom.css
+
+theme:
+  name: material
+  favicon: assets/images/sqldeps_logo.png
+  palette:
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+
+  icon:
+    repo: fontawesome/brands/github
+  icons:
+    - material/
+    - fontawesome/brands/
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - footnotes
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+  - User Guide:
+    - API Usage: user-guide/api-usage.md
+    - CLI Usage: user-guide/cli-usage.md
+    - Web Application: user-guide/web-app.md
+    - Database Integration: user-guide/database-integration.md
+  - API Reference:
+    - Models: api-reference/models.md
+    - LLM Parsers: api-reference/llm-parsers.md
+    - Database: api-reference/database.md
+    - Utils: api-reference/utils.md
+  # - Examples: examples.md
+  - Development:
+    - Authors: authors.md
+    - Contributing: contributing.md
+    - ChangeLog: changelog.md

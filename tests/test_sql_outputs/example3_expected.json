@@ -1,0 +1,9 @@
+{
+    "dependencies": {
+      "my_db.users": ["id", "name"],
+      "orders": ["order_id", "user_id"]
+    },
+    "outputs": {
+      
+    }
+}
