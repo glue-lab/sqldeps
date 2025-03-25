@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions
+    about: Ask a question or ask about a problem in GitHub Discussions.
+    url: https://github.com/glue-lab/sqldeps/discussions/categories/questions
+  - name: Feature Request
+    about: To suggest an idea or ask about a feature, please start with a question saying what you would like to achieve.
+    url: https://github.com/glue-lab/sqldeps/discussions/categories/ideas
