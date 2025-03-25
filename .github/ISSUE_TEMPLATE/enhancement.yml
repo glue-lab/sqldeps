@@ -25,12 +25,7 @@ body:
     validations:
       required: true
   - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives considered
-      description: Any alternative solutions you've considered?
-  - type: textarea
     id: additional
     attributes:
-      label: Additional context
+      label: Additional details
       description: Add any other context, code examples, or references here
