@@ -1,4 +1,40 @@
-name: Documentation
-description: Report an issue (e.g. typo) related to the documentation.
-title: "DOC: <Please write a comprehensive title after the 'DOC: ' prefix>"
+name: "🖹 Documentation"
+description: Report an issue (e.g., typo) related to the documentation.
+title: "[DOC]: <Please write a comprehensive title after the 'DOC: ' prefix>"
 labels: [documentation]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us improve the SQLDeps documentation!
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of documentation issue
+      options:
+        - Error/typo in existing documentation
+        - Missing documentation
+        - Confusing explanation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be improved or fixed?
+      placeholder: A clear description of what's wrong or missing in the documentation
+    validations:
+      required: true
+  - type: textarea
+    id: location
+    attributes:
+      label: Location
+      description: Where can we find this documentation issue?
+      placeholder: URLs, file paths, etc.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Have suggestions for how to improve the documentation?
