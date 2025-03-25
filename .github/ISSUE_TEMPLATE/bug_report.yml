@@ -1,0 +1,47 @@
+name: "🐛 Bug Report"
+description: Report a bug in SQLDeps.
+title: "[BUG]: <Please write a comprehensive title after the 'BUG: ' prefix>"
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Run `...`
+        2. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include relevant details about your environment
+      placeholder: |
+        - Python version: [e.g. 3.12]
+        - SQLDeps version: [e.g. 0.0.10]
+        - OS: [e.g. macOS, Windows, Linux]
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the bug here.
