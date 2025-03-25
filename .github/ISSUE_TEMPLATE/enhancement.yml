@@ -1,0 +1,31 @@
+name: "📈 Enhancement Request"
+description: Suggest an enhancement for SQLDeps
+title: "[Enhancement]: <Please write a comprehensive title after the 'Enhancement: ' prefix>"
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an enhancement to SQLDeps!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What problem would this enhancement solve?
+      placeholder: A clear description of what limitation or issue you're trying to address
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What solution would you like to see?
+      placeholder: Describe how you'd like to see this implemented
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional details
+      description: Add any other context, code examples, or references here
