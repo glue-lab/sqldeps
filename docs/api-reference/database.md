@@ -85,8 +85,12 @@ A pandas DataFrame with columns: `schema`, `table`, `column`, `data_type`
 Exports schema information to a CSV file:
 
 ```python
-def export_schema_csv(self, path: str) -> None:
-    """Export schema to CSV."""
+def export_schema_csv(
+    self,
+    path: str,
+    schemas: str | list[str] | None = None,
+) -> None:
+    """Export schema to CSV file."""
 ```
 
 #### Parameters
@@ -94,12 +98,14 @@ def export_schema_csv(self, path: str) -> None:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `path` | `str` | Path to the output CSV file |
+| `schemas` | `str \| list[str] \| None` | Optional schema name or list of schema names to filter results |
 
 ### Connection Configuration
 
 The `PostgreSQLConnector` supports multiple configuration sources:
 
 1. **Direct parameters** in constructor
+
 2. **YAML configuration file**:
    ```yaml
    # database.yml
@@ -110,13 +116,24 @@ The `PostgreSQLConnector` supports multiple configuration sources:
      username: username
      password: password
    ```
+
 3. **Environment variables**:
-   - `DB_HOST`
-   - `DB_PORT`
-   - `DB_NAME`
-   - `DB_USER`
-   - `DB_PASSWORD`
-4. **PostgreSQL password file** (`~/.pgpass`)
+
+    - `DB_HOST`
+    - `DB_PORT`
+    - `DB_NAME`
+    - `DB_USER`
+    - `DB_PASSWORD`
+
+4. **PostgreSQL password file** (`~/.pgpass`): The connector will automatically check 
+this file for matching credentials if no password is provided through other methods.
+The file format should follow PostgreSQL standards with each line containing:
+
+```bash
+hostname:port:database:username:password
+```
+
+where wildcards (*) can be used to match multiple values.
 
 ### Usage Examples
 
