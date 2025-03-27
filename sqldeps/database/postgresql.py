@@ -283,8 +283,3 @@ class PostgreSQLConnector(SQLBaseConnector):
                     )
 
         return pd.DataFrame(schema_data)
-
-    def export_schema_csv(self, path: str) -> None:
-        """Export schema to CSV."""
-        df = self.get_schema_df()
-        df.to_csv(path, index=False)
