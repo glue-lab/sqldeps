@@ -5,7 +5,7 @@ from typing import Any
 import pandas as pd
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+load_dotenv()
 
 
 class SQLBaseConnector(ABC):
