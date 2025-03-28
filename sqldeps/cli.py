@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -6,9 +8,11 @@ import typer
 import yaml
 from loguru import logger
 
+from sqldeps import __version__
+from sqldeps.cache import cleanup_cache
 from sqldeps.llm_parsers import BaseSQLExtractor, create_extractor
 
-# Create the main Typer app
+# Main Typer app and subcommands
 app = typer.Typer(
     name="sqldeps",
     help=(
@@ -18,21 +22,40 @@ app = typer.Typer(
     add_completion=True,
 )
 
+# Create subcommands
+app_cmd = typer.Typer(help="Run the SQLDeps web application")
+cache_cmd = typer.Typer(help="Manage SQLDeps cache")
+
+# Add subcommand groups to main app
+app.add_typer(app_cmd, name="app")
+app.add_typer(cache_cmd, name="cache")
+
 
 def extract_dependencies(
-    extractor: BaseSQLExtractor, fpath: Path, recursive: bool
+    extractor: BaseSQLExtractor,
+    fpath: Path,
+    recursive: bool,
+    n_workers: int = 1,
+    rpm: int = 100,
+    use_cache: bool = True,
+    clear_cache: bool = False,
 ) -> dict:
     """Extract dependencies from a file or directory."""
     logger.info(
         f"Extracting dependencies from {'file' if fpath.is_file() else 'folder'}: "
         f"{fpath}"
     )
-    dependencies = (
-        extractor.extract_from_file(fpath)
-        if fpath.is_file()
-        else extractor.extract_from_folder(fpath, recursive=recursive)
-    )
-    return dependencies
+    if fpath.is_file():
+        return extractor.extract_from_file(fpath)
+    else:
+        return extractor.extract_from_folder(
+            fpath,
+            recursive=recursive,
+            n_workers=n_workers,
+            rpm=rpm,
+            use_cache=use_cache,
+            clear_cache=clear_cache,
+        )
 
 
 def match_dependencies_against_schema(
@@ -40,9 +63,13 @@ def match_dependencies_against_schema(
     dependencies: dict,
     db_target_schemas: str,
     db_credentials: Path | None,
+    db_dialect: str = "postgresql",
 ) -> dict:
     """Match extracted dependencies against a database schema."""
-    from .database import PostgreSQLConnector
+    if db_dialect.lower() == "postgresql":
+        from .database import PostgreSQLConnector as DBConnector
+    else:
+        raise ValueError(f"Unsupported database dialect: {db_dialect}")
 
     logger.info("Retrieving schema from database...")
     schemas = [s.strip() for s in db_target_schemas.split(",")]
@@ -50,7 +77,7 @@ def match_dependencies_against_schema(
     with open(db_credentials) as file:
         db_credentials = yaml.safe_load(file)["database"]
 
-    conn = PostgreSQLConnector(
+    conn = DBConnector(
         host=db_credentials["host"],
         port=db_credentials["port"],
         database=db_credentials["database"],
@@ -79,8 +106,40 @@ def save_output(
         logger.success(f"Saved to JSON: {output_path}")
 
 
+def version_callback(value: bool):
+    """Print version and exit."""
+    if value:
+        typer.echo(f"SQLDeps version: {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def callback(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version", help="Show the version and exit.", callback=version_callback
+        ),
+    ] = False,
+):
+    """SQL Dependency Extractor.
+
+    Analyze SQL files to extract table and column dependencies.
+    """
+    pass
+
+
+def path_complete(incomplete: str):
+    """Simple path completion."""
+    for path in Path(".").glob(f"{incomplete}*"):
+        if path.is_dir():
+            yield f"{path.name}/"
+        else:
+            yield path.name
+
+
 @app.command()
-def main(
+def extract(
     fpath: Annotated[
         Path,
         typer.Argument(
@@ -89,6 +148,7 @@ def main(
             dir_okay=True,
             file_okay=True,
             resolve_path=True,
+            autocompletion=path_complete,
         ),
     ],
     framework: Annotated[
@@ -130,6 +190,36 @@ def main(
             resolve_path=True,
         ),
     ] = None,
+    db_dialect: Annotated[
+        str,
+        typer.Option(
+            help="Database dialect to use for schema validation",
+            case_sensitive=False,
+        ),
+    ] = "postgresql",
+    n_workers: Annotated[
+        int,
+        typer.Option(
+            help=(
+                "Number of workers for parallel processing. "
+                "Use -1 for all CPU cores, 1 for sequential processing."
+            ),
+        ),
+    ] = 1,
+    rpm: Annotated[
+        int,
+        typer.Option(
+            help="Maximum requests per minute for API rate limiting (0 to disable)",
+        ),
+    ] = 100,
+    use_cache: Annotated[
+        bool,
+        typer.Option(help="Use local cache for SQL extraction results"),
+    ] = True,
+    clear_cache: Annotated[
+        bool,
+        typer.Option(help="Clear local cache after processing"),
+    ] = False,
     output: Annotated[
         Path,
         typer.Option(
@@ -146,17 +236,64 @@ def main(
         extractor = create_extractor(
             framework=framework, model=model, prompt_path=prompt
         )
-        dependencies = extract_dependencies(extractor, fpath, recursive)
+
+        dependencies = extract_dependencies(
+            extractor,
+            fpath,
+            recursive=recursive,
+            n_workers=n_workers,
+            rpm=rpm,
+            use_cache=use_cache,
+            clear_cache=clear_cache,
+        )
 
         if db_match_schema:
             dependencies = match_dependencies_against_schema(
-                extractor, dependencies, db_target_schemas, db_credentials
+                extractor, dependencies, db_target_schemas, db_credentials, db_dialect
             )
 
         save_output(dependencies, output, is_schema_match=db_match_schema)
 
     except Exception as e:
         logger.error(f"Error extracting dependencies: {e}")
+        raise typer.Exit(code=1)
+
+
+# App subcommand
+@app_cmd.callback(invoke_without_command=True)
+def app_main():
+    """Run SQLDeps web application."""
+    try:
+        # Get the path to the app module in the package
+        package_dir = Path(__file__).parent
+        app_module_path = package_dir / "app" / "main.py"
+
+        if not app_module_path.exists():
+            raise FileNotFoundError("App not found in package")
+
+        logger.info(f"Running web application from: {app_module_path}")
+
+        # Run streamlit with the app module
+        subprocess.run([sys.executable, "-m", "streamlit", "run", str(app_module_path)])
+    except Exception as e:
+        logger.error(f"Failed to start web application: {e}")
+        raise typer.Exit(code=1)
+
+
+# Cache subcommands
+@cache_cmd.command("clear")
+def cache_clear():
+    """Clear the SQLDeps cache directory."""
+    try:
+        logger.info("Clearing SQLDeps cache...")
+        success = cleanup_cache()
+        if success:
+            logger.success("Cache cleared successfully")
+        else:
+            logger.error("Failed to clear cache")
+            raise typer.Exit(code=1)
+    except Exception as e:
+        logger.error(f"Error clearing cache: {e}")
         raise typer.Exit(code=1)
 
 
