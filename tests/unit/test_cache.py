@@ -18,7 +18,8 @@ def test_get_cache_path():
         mock_relative_to.return_value = Path("relative/path/to/file.sql")
 
         cache_path = get_cache_path("file.sql")
-        assert str(cache_path) == ".sqldeps_cache/relative_path_to_file.sql.json"
+        expected_path = Path(".sqldeps_cache") / "relative_path_to_file.sql.json"
+        assert cache_path / expected_path
 
     # Test with external path (hash-based)
     with (
