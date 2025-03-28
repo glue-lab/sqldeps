@@ -49,6 +49,7 @@ dataviz = [
 [project.urls]
 Repository = "https://github.com/glue-lab/sqldeps"
 Documentation = "https://sqldeps.readthedocs.io"
+Questions = "https://github.com/glue-lab/sqldeps/discussions/categories/questions"
 Issues = "https://github.com/glue-lab/sqldeps/issues"
 
 [project.scripts]
@@ -60,7 +61,7 @@ testpaths = ["tests"]
 markers = [
     "llm: marks tests that require LLM API calls (skipped by default)",
 ]
-addopts = "-m 'not llm'"
+addopts = "-m 'not llm and not integration' --ignore=sqldeps/app"
 
 [tool.hatch.metadata]
 allow-direct-references = false
@@ -70,6 +71,7 @@ packages = ["sqldeps"]
 
 [dependency-groups]
 dev = [
+    "pytest-cov>=6.0.0",
     "pytest>=8.3.4",
     "ruff>=0.9.7",
 ]
