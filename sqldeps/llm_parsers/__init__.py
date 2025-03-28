@@ -7,7 +7,7 @@ from .deepseek import DeepseekExtractor
 from .groq import GroqExtractor
 from .openai import OpenaiExtractor
 
-load_dotenv(override=True)
+load_dotenv()
 
 DEFAULTS = {
     "groq": {"class": GroqExtractor, "model": "llama-3.3-70b-versatile"},

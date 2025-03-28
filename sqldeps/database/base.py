@@ -64,7 +64,11 @@ class SQLBaseConnector(ABC):
         """Get database schema information."""
         pass
 
-    def export_schema_csv(self, path: str) -> None:
+    def export_schema_csv(
+        self,
+        path: str,
+        schemas: str | list[str] | None = None,
+    ) -> None:
         """Export schema to CSV file."""
-        df = self.get_schema()
+        df = self.get_schema(schemas)
         df.to_csv(path, index=False)
