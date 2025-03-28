@@ -1,6 +1,52 @@
+"""Utility functions for SQLDeps."""
+
+from pathlib import Path
+
 import pandas as pd
 
 from sqldeps.models import SQLProfile
+
+
+def find_sql_files(
+    folder_path: str | Path,
+    recursive: bool = False,
+    valid_extensions: set[str] | None = None,
+) -> list[Path]:
+    """Find SQL files in a folder.
+
+    Args:
+        folder_path: Path to the folder
+        recursive: Whether to search recursively
+        valid_extensions: Set of valid file extensions (default: {'sql'})
+
+    Returns:
+        List of file paths
+    """
+    folder_path = Path(folder_path)
+
+    # Validate folder
+    if not folder_path.exists():
+        raise FileNotFoundError(f"Folder not found: {folder_path}")
+
+    if not folder_path.is_dir():
+        raise NotADirectoryError(f"Path is not a directory: {folder_path}")
+
+    # Default extensions if not provided
+    valid_extensions = valid_extensions or {"sql"}
+    valid_extensions = {ext.lower().lstrip(".") for ext in valid_extensions}
+
+    # Find matching files
+    pattern = "**/*" if recursive else "*"
+    sql_files = [
+        f
+        for f in folder_path.glob(pattern)
+        if f.is_file() and f.suffix.lower().lstrip(".") in valid_extensions
+    ]
+
+    if not sql_files:
+        raise ValueError(f"No SQL files found in {folder_path}")
+
+    return sql_files
 
 
 def merge_profiles(analyses: list[SQLProfile]) -> SQLProfile:

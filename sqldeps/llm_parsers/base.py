@@ -10,9 +10,11 @@ import yaml
 from loguru import logger
 from tqdm import tqdm
 
+from sqldeps.cache import cleanup_cache, load_from_cache, save_to_cache
 from sqldeps.database.base import SQLBaseConnector
 from sqldeps.models import SQLProfile
-from sqldeps.utils import merge_profiles, merge_schemas
+from sqldeps.rate_limiter import RateLimiter
+from sqldeps.utils import find_sql_files, merge_profiles, merge_schemas
 
 
 class BaseSQLExtractor(ABC):
@@ -25,7 +27,9 @@ class BaseSQLExtractor(ABC):
         self, model: str, params: dict | None = None, prompt_path: Path | None = None
     ) -> None:
         """Initialize with model name and vendor-specific params."""
+        self.framework = self.__class__.__name__.replace("Extractor", "").lower()
         self.model = model
+        self.prompt_path = prompt_path
         self.params = params or {}
         self.prompts = self._load_prompts(prompt_path)
 
@@ -56,40 +60,118 @@ class BaseSQLExtractor(ABC):
         self,
         folder_path: str | Path,
         recursive: bool = False,
+        merge_sql_profiles: bool = False,
         valid_extensions: set[str] | None = None,
-    ) -> SQLProfile:
+        n_workers: int = 1,
+        rpm: int = 100,
+        use_cache: bool = True,
+        clear_cache: bool = False,
+    ) -> SQLProfile | dict[str, SQLProfile]:
         """Extract and merge dependencies from all SQL files in a folder."""
-        folder_path = Path(folder_path)
-        if not folder_path.exists():
-            raise FileNotFoundError(f"Folder not found: {folder_path}")
+        # Find all SQL files
+        sql_files = find_sql_files(folder_path, recursive, valid_extensions)
 
-        if not folder_path.is_dir():
-            raise NotADirectoryError(f"Path is not a directory: {folder_path}")
+        # Choose processing strategy based on n_workers
+        if n_workers != 1:
+            # Parallel processing
+            dependencies = self._process_files_in_parallel(
+                sql_files, n_workers=n_workers, rpm=rpm, use_cache=use_cache
+            )
+        else:
+            # Sequential processing
+            dependencies = self._process_files_sequentially(
+                sql_files, rpm=rpm, use_cache=use_cache
+            )
 
-        # Get all files with valid extensions
-        valid_extensions = self._normalize_extensions(valid_extensions)
+        # If no results were extracted
+        if not dependencies:
+            raise ValueError("No dependencies could be extracted from any SQL file")
 
-        sql_files = [
-            f
-            for f in (folder_path.rglob("*") if recursive else folder_path.glob("*"))
-            if f.suffix.lower().lstrip(".") in valid_extensions
-        ]
+        # Clean up cache if requested - now handled in one place
+        if clear_cache and use_cache:
+            cleanup_cache()
 
-        if not sql_files:
-            raise ValueError(f"No SQL files found in: {folder_path}")
+        # Merge results if requested - now handled in one place
+        if merge_sql_profiles:
+            return merge_profiles(list(dependencies.values()))
 
-        # Extract dependencies from each file
-        dependencies = []
-        for sql_file in tqdm(sql_files):
+        return dependencies
+
+    def _process_files_sequentially(
+        self, sql_files: list[Path], rpm: int = 100, use_cache: bool = True
+    ) -> dict[str, SQLProfile]:
+        """Process a list of SQL files sequentially with rate limiting.
+
+        Args:
+            sql_files: List of SQL file paths to process
+            rpm: Requests per minute limit
+            use_cache: Whether to use cached results
+
+        Returns:
+            Dictionary mapping file paths to their respective SQLProfile objects
+        """
+        # Create rate limiter
+        rate_limiter = RateLimiter(rpm)
+        dependencies = {}
+
+        # Log about cache and rate limiting
+        if use_cache:
+            logger.info("Cache usage: enabled")
+        logger.info(
+            f"Processing {len(sql_files)} SQL files sequentially"
+            + (f" with RPM: {rpm}" if rpm > 0 else "")
+        )
+
+        # Process each file with rate limiting
+        for sql_file in tqdm(sql_files, desc="Processing SQL files"):
             try:
-                dep = self.extract_from_file(sql_file)
-                dependencies.append(dep)
+                # Check cache first if enabled
+                if use_cache:
+                    result = load_from_cache(sql_file)
+                    if result:
+                        dependencies[str(sql_file)] = result
+                        continue
+
+                # Apply rate limiting
+                rate_limiter.wait_if_needed()
+
+                # Extract dependencies
+                result = self.extract_from_file(sql_file)
+                dependencies[str(sql_file)] = result
+
+                # Save to cache if enabled
+                if use_cache:
+                    save_to_cache(result, sql_file)
+
             except Exception as e:
                 logger.warning(f"Failed to process {sql_file}: {e}")
                 continue
 
-        # Merge all dependencies
-        return merge_profiles(dependencies)
+        # If no results were extracted
+        if not dependencies:
+            raise ValueError("No dependencies could be extracted from any SQL file")
+
+        return dependencies
+
+    def _process_files_in_parallel(
+        self,
+        sql_files: list[Path],
+        n_workers: int = 2,
+        rpm: int = 100,
+        use_cache: bool = True,
+    ) -> dict[str, SQLProfile]:
+        """Process a list of SQL files in parallel with rate limiting."""
+        from sqldeps.parallel import process_files_in_parallel
+
+        return process_files_in_parallel(
+            sql_files,
+            framework=self.framework,
+            model=self.model,
+            prompt_path=self.prompt_path,
+            n_workers=n_workers,
+            rpm=rpm,
+            use_cache=use_cache,
+        )
 
     def match_database_schema(
         self,

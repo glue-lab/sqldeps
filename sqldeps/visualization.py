@@ -15,7 +15,7 @@ def visualize_sql_dependencies(  # noqa: C901
     max_file_size: int = 40,
     min_table_size: int = 15,
     max_table_size: int = 30,
-    highlight_common_tables: bool = True,
+    highlight_common_tables: bool = False,
     file_symbol: str = "hexagon2",
     table_symbol: str = "circle",
     color_gradient: bool = False,
@@ -33,10 +33,10 @@ def visualize_sql_dependencies(  # noqa: C901
 
     Args:
         dependencies: Dictionary where keys are filenames and values are
-                      dependency objects with 'tables' and 'columns' attributes
+                      dictionaries with "table" -> list of columns
         output_path: Optional path to save the HTML output
         show_columns: Whether to include column details in hover text
-        layout_algorithm: Graph layout algorithm ('spring', 'circular', 'kamada_kawai')
+        layout_algorithm: Graph layout algorithm ("spring", "circular", "kamada_kawai")
         min_file_size, max_file_size: Size range for file nodes
         min_table_size, max_table_size: Size range for table nodes
         highlight_common_tables: Whether to highlight tables used by multiple files
@@ -85,7 +85,7 @@ def visualize_sql_dependencies(  # noqa: C901
             node_data[base_filename] = {"type": "file", "full_path": filename}
 
         # Process tables
-        for table in deps.get("tables", []):
+        for table, columns in deps.items():
             # Track table usage
             if table not in table_usage:
                 table_usage[table] = []
@@ -101,10 +101,10 @@ def visualize_sql_dependencies(  # noqa: C901
             edges.append((base_filename, table))
 
             # Track columns for this table
-            if show_columns and table in deps.get("columns", {}):
+            if show_columns and len(columns) > 0:
                 if table not in table_columns:
                     table_columns[table] = set()
-                table_columns[table].update(deps["columns"][table])
+                table_columns[table].update(columns)
 
     # Function to calculate layout for different algorithms
     def get_layout(algorithm):

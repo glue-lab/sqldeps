@@ -115,6 +115,55 @@ sqldeps data/sql_folder \
     -o folder_deps.csv
 ```
 
+```bash
+# Access CLI help
+sqldeps --help
+                                                                                                                                                                                         
+ Usage: sqldeps [OPTIONS] COMMAND [ARGS]...                                                                                                                                              
+                                                                                                                                                                                         
+ SQL Dependency Extractor - Analyze SQL files to extract table and column dependencies                                                                                                   
+                                                                                                                                                                                         
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --version                     Show the version and exit.                                                                                                                              │
+│ --install-completion          Install completion for the current shell.                                                                                                               │
+│ --show-completion             Show completion for the current shell, to copy it or customize the installation.                                                                        │
+│ --help                        Show this message and exit.                                                                                                                             │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ extract   Extract SQL dependencies from file or folder.                                                                                                                               │
+│ app       Run the SQLDeps web application                                                                                                                                             │
+│ cache     Manage SQLDeps cache                                                                                                                                                        │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+# Access CLI help for extraction
+$ sqldeps extract --help
+                                                                                                                                                                                         
+ Usage: sqldeps extract [OPTIONS] FPATH                                                                                                                                                  
+                                                                                                                                                                                         
+ Extract SQL dependencies from file or folder.                                                                                                                                           
+ This tool analyzes SQL files to identify table and column dependencies, optionally validating them against a real database schema.                                                      
+                                                                                                                                                                                         
+╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    fpath      PATH  SQL file or directory path [default: None] [required]                                                                                                           │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --framework                                      TEXT     LLM framework to use [groq, openai, deepseek] [default: groq]                                                               │
+│ --model                                          TEXT     Model name for the selected framework [default: None]                                                                       │
+│ --prompt                                         FILE     Path to custom prompt YAML file [default: None]                                                                             │
+│ --recursive          -r                                   Recursively scan folder for SQL files                                                                                       │
+│ --db-match-schema        --no-db-match-schema             Match dependencies against database schema [default: no-db-match-schema]                                                    │
+│ --db-target-schemas                              TEXT     Comma-separated list of target schemas to validate against [default: public]                                                │
+│ --db-credentials                                 FILE     Path to database credentials YAML file [default: None]                                                                      │
+│ --db-dialect                                     TEXT     Database dialect to use for schema validation [default: postgresql]                                                         │
+│ --n-workers                                      INTEGER  Number of workers for parallel processing. Use -1 for all CPU cores, 1 for sequential processing. [default: 1]              │
+│ --rpm                                            INTEGER  Maximum requests per minute for API rate limiting (0 to disable) [default: 100]                                             │
+│ --use-cache              --no-use-cache                   Use local cache for SQL extraction results [default: use-cache]                                                             │
+│ --clear-cache            --no-clear-cache                 Clear local cache after processing [default: no-clear-cache]                                                                │
+│ --output             -o                          PATH     Output file path for extracted dependencies [default: dependencies.json]                                                    │
+│ --help                                                    Show this message and exit.                                                                                                 │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
 ## Example
 
 Given this SQL query:
@@ -249,7 +298,12 @@ The custom prompt YAML should include:
 
 ```yaml
 system_prompt: |
-  Detailed instructions to the model...
+  You are a SQL analyzer that extracts two key elements from SQL queries:
+
+  1. DEPENDENCIES: Tables and columns that must exist BEFORE query execution.
+  2. OUTPUTS: Tables and columns permanently CREATED or MODIFIED by the query.
+
+  # Add detailed instructions for the LLM here...
 
 user_prompt: |
   Extract SQL dependencies and outputs from this query:
