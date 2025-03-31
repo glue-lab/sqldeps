@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from typing import Annotated
 
+import pandas as pd
 import typer
 import yaml
 from loguru import logger
@@ -11,6 +12,7 @@ from loguru import logger
 from sqldeps import __version__
 from sqldeps.cache import cleanup_cache
 from sqldeps.llm_parsers import BaseSQLExtractor, create_extractor
+from sqldeps.utils import merge_profiles
 
 # Main Typer app and subcommands
 app = typer.Typer(
@@ -35,6 +37,8 @@ def extract_dependencies(
     extractor: BaseSQLExtractor,
     fpath: Path,
     recursive: bool,
+    merge_sql_profiles: bool = False,
+    valid_extensions: set | None = None,
     n_workers: int = 1,
     rpm: int = 100,
     use_cache: bool = True,
@@ -51,6 +55,8 @@ def extract_dependencies(
         return extractor.extract_from_folder(
             fpath,
             recursive=recursive,
+            merge_sql_profiles=merge_sql_profiles,
+            valid_extensions=valid_extensions,
             n_workers=n_workers,
             rpm=rpm,
             use_cache=use_cache,
@@ -84,6 +90,10 @@ def match_dependencies_against_schema(
         username=db_credentials["username"],
     )
 
+    # Force merge profiles for DB schema matching
+    if isinstance(dependencies, dict):
+        dependencies = merge_profiles(dependencies.values())
+
     db_dependencies = extractor.match_database_schema(
         dependencies, db_connection=conn, target_schemas=schemas
     )
@@ -94,13 +104,31 @@ def save_output(
     dependencies: dict, output_path: Path, is_schema_match: bool = False
 ) -> None:
     """Save extracted dependencies to the specified output format."""
-    if output_path.suffix.lower() == ".csv":
-        df_output = dependencies if is_schema_match else dependencies.to_dataframe()
+    if output_path.suffix.lower() == ".csv" or is_schema_match:
+        # Dataframe output
+        output_path = output_path.with_suffix(".csv")
+        if isinstance(dependencies, dict):
+            df_output = (
+                pd.concat(
+                    [
+                        deps.to_dataframe().assign(file_path=file)
+                        for file, deps in dependencies.items()
+                    ]
+                )
+                .set_index("file_path")
+                .reset_index()
+            )
+        else:
+            df_output = dependencies if is_schema_match else dependencies.to_dataframe()
         df_output.to_csv(output_path, index=False)
         logger.success(f"Saved to CSV: {output_path}")
     else:
-        json_output = dependencies.to_dict()
+        # Json output
         output_path = output_path.with_suffix(".json")
+        if isinstance(dependencies, dict):
+            json_output = {file: deps.to_dict() for file, deps in dependencies.items()}
+        else:
+            json_output = dependencies.to_dict()
         with open(output_path, "w") as f:
             json.dump(json_output, f, indent=2)
         logger.success(f"Saved to JSON: {output_path}")
