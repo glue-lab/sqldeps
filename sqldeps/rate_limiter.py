@@ -1,6 +1,7 @@
 """Rate limiting utilities for API calls."""
 
 import time
+from collections import deque
 
 from loguru import logger
 
@@ -13,7 +14,7 @@ class RateLimiter:
 
     Attributes:
         rpm: Maximum requests per minute allowed
-        call_times: List storing timestamps of recent API calls
+        call_times: Deque storing timestamps of recent API calls
         window: Time window in seconds (default: 60 seconds = 1 minute)
     """
 
@@ -24,7 +25,7 @@ class RateLimiter:
             rpm: Maximum number of API requests allowed per minute
         """
         self.rpm = rpm
-        self.call_times = []
+        self.call_times = deque()
         self.window = 60  # 1 minute window
 
     def wait_if_needed(self):
@@ -40,7 +41,7 @@ class RateLimiter:
         # Remove timestamps older than our time window (60 seconds)
         cutoff = now - self.window
         while self.call_times and self.call_times[0] < cutoff:
-            self.call_times.pop(0)
+            self.call_times.popleft()
 
         # If we've reached the RPM limit, wait until the oldest timestamp expires
         if len(self.call_times) >= self.rpm:
@@ -53,7 +54,7 @@ class RateLimiter:
                 now = time.time()
                 cutoff = now - self.window
                 while self.call_times and self.call_times[0] < cutoff:
-                    self.call_times.pop(0)
+                    self.call_times.popleft()
 
         # Record this API call's timestamp
         self.call_times.append(now)
