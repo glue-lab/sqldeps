@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import os
 from pathlib import Path
 
 from loguru import logger
@@ -13,10 +12,10 @@ CACHE_DIR = ".sqldeps_cache"
 
 
 def get_cache_path(file_path: str | Path, cache_dir: str | Path = CACHE_DIR) -> Path:
-    """Generates a consistent cache file path for a given SQL file.
+    """Generates a consistent cache file path based on SQL file content.
 
-    Converts file paths to unique cache filenames by using either a relative path
-    or a hash-based name (for external files).
+    Creates a unique cache filename by hashing the SQL file's content.
+    Includes the original filename in the cache name for easier debugging.
 
     Args:
         file_path: Path to the SQL file to be processed
@@ -25,16 +24,22 @@ def get_cache_path(file_path: str | Path, cache_dir: str | Path = CACHE_DIR) -> 
 
     Returns:
         Path object pointing to the cache file location
+
+    Raises:
+        FileNotFoundError: If the SQL file doesn't exist
+        PermissionError: If the SQL file can't be read
     """
     file_path = Path(file_path).resolve()
 
-    try:
-        # Use relative path for readability
-        cache_name = str(file_path.relative_to(Path.cwd())).replace(os.sep, "_")
-    except ValueError:
-        # Use a hash for external paths
-        path_hash = hashlib.md5(str(file_path).encode()).hexdigest()[:10]
-        cache_name = f"{file_path.stem}_{path_hash}"
+    # Read file content and create hash
+    with open(file_path, "rb") as f:
+        content = f.read()
+
+    # Hash the content
+    content_hash = hashlib.md5(content).hexdigest()[:16]
+
+    # Use a combination of filename and content hash for better readability/debugging
+    cache_name = f"{file_path.stem}_{content_hash}"
 
     # Ensure a valid filename
     cache_name = "".join(c if c.isalnum() or c in "_-." else "_" for c in cache_name)
