@@ -1,38 +1,42 @@
 # tests/test_cache.py
 import json
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 from sqldeps.cache import cleanup_cache, get_cache_path, load_from_cache, save_to_cache
 from sqldeps.models import SQLProfile
 
 
 def test_get_cache_path():
-    """Test generation of cache file paths."""
-    # Test relative to current directory
+    """Test generation of cache file paths based on file content."""
+    # Set up mock file content
+    mock_content = b"SELECT * FROM table"
+    mock_content_hash = "0123456789abcdef"  # Simplified hash output
+
     with (
         patch("pathlib.Path.resolve") as mock_resolve,
-        patch("pathlib.Path.relative_to") as mock_relative_to,
-    ):
-        mock_resolve.return_value = Path("/absolute/path/to/file.sql")
-        mock_relative_to.return_value = Path("relative/path/to/file.sql")
-
-        cache_path = get_cache_path("file.sql")
-        expected_path = Path(".sqldeps_cache") / "relative_path_to_file.sql.json"
-        assert cache_path / expected_path
-
-    # Test with external path (hash-based)
-    with (
-        patch("pathlib.Path.resolve") as mock_resolve,
-        patch("pathlib.Path.relative_to") as mock_relative_to,
+        patch("builtins.open", mock_open(read_data=mock_content)),
         patch("hashlib.md5") as mock_md5,
     ):
-        mock_resolve.return_value = Path("/external/path/script.sql")
-        mock_relative_to.side_effect = ValueError("Not relative")
-        mock_md5().hexdigest.return_value = "abcdef1234567890"
+        # Setup mocks
+        mock_resolve.return_value = Path("/absolute/path/to/file.sql")
+        mock_hash_instance = MagicMock()
+        mock_hash_instance.hexdigest.return_value = mock_content_hash
+        mock_md5.return_value = mock_hash_instance
 
-        cache_path = get_cache_path("/external/path/script.sql")
-        assert "script_abcdef1234" in str(cache_path)
+        # Test content-based hashing
+        cache_path = get_cache_path("file.sql")
+
+        # Verify results
+        expected_path = Path(".sqldeps_cache") / f"file_{mock_content_hash[:16]}.json"
+        assert cache_path == expected_path
+
+        # Verify file was opened for reading
+        open.assert_called_once_with(Path("/absolute/path/to/file.sql"), "rb")
+
+        # Verify hash was computed with file content
+        mock_md5.assert_called_once()
+        mock_hash_instance.hexdigest.assert_called_once()
 
 
 def test_save_load_cache():
