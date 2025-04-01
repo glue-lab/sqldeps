@@ -12,15 +12,22 @@ from sqldeps.database import PostgreSQLConnector
 # Import the necessary components from sqldeps
 from sqldeps.llm_parsers import create_extractor
 
+# Get the logo path
+ASSETS_DIR = Path(__file__).parent / "assets" / "images"
+LOGO_GRAY_PATH = ASSETS_DIR / "sqldeps_gray.png"
+LOGO_WHITE_PATH = ASSETS_DIR / "sqldeps_white.png"
+
+# Update the app configuration
 st.set_page_config(
     page_title="SQL Dependency Extractor",
-    page_icon="🔍",
+    page_icon=str(LOGO_WHITE_PATH),  # Use the logo as the page icon
     layout="wide",
 )
 
 
 def main() -> None:  # noqa: C901
     st.title("SQL Dependency Extractor")
+    st.sidebar.image(str(LOGO_GRAY_PATH))
     st.sidebar.header("Configuration")
 
     # Framework selection

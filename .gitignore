@@ -170,6 +170,9 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+# SQLDeps-specific cache:
+.sqldeps_cache
+
 # PyPI configuration file
 .pypirc
 
