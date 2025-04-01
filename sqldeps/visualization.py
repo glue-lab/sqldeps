@@ -1,3 +1,9 @@
+"""Visualization utilities for SQL dependencies.
+
+This module provides functions for visualizing SQL dependencies as
+interactive network graphs using Plotly.
+"""
+
 import os
 from typing import Any
 
@@ -19,17 +25,16 @@ def visualize_sql_dependencies(  # noqa: C901
     file_symbol: str = "hexagon2",
     table_symbol: str = "circle",
     color_gradient: bool = False,
-    file_colorscale=None,
-    table_colorscale=None,
-    common_table_colorscale=None,
+    file_colorscale: str | None = None,
+    table_colorscale: str | None = None,
+    common_table_colorscale: str | None = None,
     show_file_text: bool = True,
     show_table_text: bool = False,
     text_font_size: int = 10,
     show_text_buttons: bool = False,
     show_layout_buttons: bool = False,
 ) -> go.Figure:
-    """
-    Create an interactive graph visualization of SQL file dependencies.
+    """Create an interactive graph visualization of SQL file dependencies.
 
     Args:
         dependencies: Dictionary where keys are filenames and values are
@@ -37,10 +42,12 @@ def visualize_sql_dependencies(  # noqa: C901
         output_path: Optional path to save the HTML output
         show_columns: Whether to include column details in hover text
         layout_algorithm: Graph layout algorithm ("spring", "circular", "kamada_kawai")
-        min_file_size, max_file_size: Size range for file nodes
-        min_table_size, max_table_size: Size range for table nodes
+        min_file_size: Size range for file nodes (minimum)
+        max_file_size: Size range for file nodes (maximum)
+        min_table_size: Size range for table nodes (minimum)
+        max_table_size: Size range for table nodes (maximum)
         highlight_common_tables: Whether to highlight tables used by multiple files
-        file_symbol: Symbol to use for file nodes ("circle", "square", etc.)
+        file_symbol: Symbol to use for file nodes
         table_symbol: Symbol to use for table nodes
         color_gradient: Whether to use color gradient based on usage frequency
         file_colorscale: Custom colorscale for files (default: Blues)
@@ -107,7 +114,15 @@ def visualize_sql_dependencies(  # noqa: C901
                 table_columns[table].update(columns)
 
     # Function to calculate layout for different algorithms
-    def get_layout(algorithm):
+    def get_layout(algorithm: str) -> dict:
+        """Calculate node positions based on the specified layout algorithm.
+
+        Args:
+            algorithm: The layout algorithm to use
+
+        Returns:
+            dict: Node positions
+        """
         if algorithm == "spring":
             return nx.spring_layout(G, k=0.2, iterations=50)
         elif algorithm == "circular":

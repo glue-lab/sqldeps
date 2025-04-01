@@ -1,4 +1,8 @@
-"""Parallel processing utilities for SQL dependency extraction."""
+"""Parallel processing utilities for SQL dependency extraction.
+
+This module provides functions for extracting SQL dependencies in parallel
+using multiple worker processes, with shared rate limiting.
+"""
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
@@ -10,17 +14,28 @@ from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from sqldeps.cache import load_from_cache, save_to_cache
+from sqldeps.models import SQLProfile
 from sqldeps.rate_limiter import MultiprocessingRateLimiter
 
 
 def resolve_workers(n_workers: int) -> int:
-    """Resolve the number of worker processes to use."""
+    """Resolve the number of worker processes to use.
+
+    Args:
+        n_workers: Requested number of workers (-1 for all, >0 for specific count)
+
+    Returns:
+        int: Actual number of worker processes to use
+
+    Raises:
+        ValueError: If n_workers is invalid (not -1, or not between 1 and cpu_count)
+    """
     max_workers = cpu_count()
 
     if n_workers == -1:
-        return max_workers  # Use all available processors
+        return max_workers
     if 1 <= n_workers <= max_workers:
-        return n_workers  # Use specified number of workers
+        return n_workers
 
     raise ValueError(
         f"Invalid worker count: {n_workers}. "
@@ -65,7 +80,7 @@ def _extract_from_file(
 
         # Apply rate limiting and extract with retry
         @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=2, max=10))
-        def extract_with_rate_limit():
+        def extract_with_rate_limit() -> SQLProfile:
             rate_limiter.wait_if_needed()
             logger.debug(f"Extracting from file: {file_path}")
             return extractor.extract_from_file(file_path)
@@ -124,7 +139,23 @@ def process_files_in_parallel(
     rpm: int = 100,
     use_cache: bool = True,
 ) -> dict:
-    """Extract SQL dependencies from SQL files in parallel with rate limiting."""
+    """Extract SQL dependencies from SQL files in parallel with rate limiting.
+
+    Args:
+        sql_files: List of Paths to SQL files to process
+        framework: LLM framework to use (e.g., groq, openai, deepseek)
+        model: Model name within the selected framework
+        prompt_path: Path to custom prompt YAML file
+        n_workers: Number of worker processes to use (-1 for all)
+        rpm: Requests per minute limit across all workers
+        use_cache: Whether to use cached results
+
+    Returns:
+        Dictionary mapping file paths to SQLProfile objects
+
+    Raises:
+        ValueError: If no SQL files provided or no dependencies extracted
+    """
     # Resolve number of workers
     n_workers = resolve_workers(n_workers)
 

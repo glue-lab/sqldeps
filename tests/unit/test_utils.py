@@ -1,4 +1,8 @@
-"""Unit tests for utility functions in sqldeps.utils."""
+"""Unit tests for utility functions.
+
+This module tests the general utility functions used by SQLDeps,
+including SQL file finding, profile merging, and schema operations.
+"""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -14,7 +18,7 @@ from sqldeps.utils import find_sql_files, merge_profiles, merge_schemas, schema_
 class TestFileUtils:
     """Test file utility functions."""
 
-    def test_find_sql_files(self):
+    def test_find_sql_files(self) -> None:
         """Test finding SQL files in a directory."""
         # Mock a directory structure
         mock_files = [
@@ -58,7 +62,7 @@ class TestFileUtils:
             assert Path("folder/subdir/file3.sql") in result
             assert Path("folder/file.txt") not in result
 
-    def test_find_sql_files_custom_extensions(self):
+    def test_find_sql_files_custom_extensions(self) -> None:
         """Test finding files with custom extensions."""
         # Mock a directory structure
         mock_files = [
@@ -89,7 +93,7 @@ class TestFileUtils:
             assert Path("folder/file2.hql") in result
             assert Path("folder/file3.pgsql") not in result
 
-    def test_folder_not_found(self):
+    def test_folder_not_found(self) -> None:
         """Test handling of folder not found."""
         with (
             patch("pathlib.Path.exists", return_value=False),
@@ -102,16 +106,10 @@ class TestMergeProfiles:
     """Test merging of SQL profiles."""
 
     def test_merge_profiles(self) -> None:
-        """
-        Test merging multiple SQLProfile objects with different schemas, tables,
-        and cases where '*' (wildcard) appears in column dependencies.
+        """Test merging multiple SQLProfile objects.
 
-        Ensures:
-        1. Unique tables are merged correctly.
-        2. Columns are merged per table unless '*' is present.
-        3. When '*' appears in a table's columns, it takes precedence,
-        and other columns are ignored.
-        4. Both dependencies and outputs are properly merged.
+        Tests merging multiple SQLProfile objects with different schemas, tables,
+        and cases where '*' (wildcard) appears in column dependencies.
         """
         # First analysis: Normal tables with specific columns
         analysis1 = SQLProfile(
@@ -205,8 +203,9 @@ class TestSchemaMerging:
     """Test schema merging and validation."""
 
     def test_merge_schemas(self) -> None:
-        """
-        Tests all combinations of schema/table/column matches including:
+        """Tests all combinations of schema/table/column matches.
+
+        Tests include:
         - Wildcards (*)
         - No columns (None)
         - Exact schema matches
@@ -319,7 +318,7 @@ class TestSchemaMerging:
         assert sum(none_cols["exact_match"]) == 1  # One exact match
 
     def test_edge_cases(self) -> None:
-        """Test edge cases for merge_schemas"""
+        """Test edge cases for merge_schemas."""
         # Minimal database schema
         db_records = [
             ["schema1", "table1", "col1", "type1"],
@@ -372,8 +371,10 @@ class TestSchemaMerging:
         assert all(result_none["column"].isna())  # All columns should be None
 
     def test_schema_diff(self) -> None:
-        """
-        Test the optimized schema_diff function with comprehensive scenarios.
+        """Test the optimized schema_diff function.
+
+        Tests the schema_diff function with comprehensive scenarios including
+        exact matches, non-existent tables, and wildcards.
         """
         # Setup test data
         db_records = [

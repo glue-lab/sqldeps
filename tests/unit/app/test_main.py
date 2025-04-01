@@ -1,4 +1,8 @@
-"""Unit tests for the SQLDeps web application."""
+"""Unit tests for the SQLDeps web application.
+
+This module tests the web application's UI elements, data processing,
+and error handling without requiring an actual browser.
+"""
 
 from unittest.mock import MagicMock, patch
 
@@ -9,8 +13,12 @@ from sqldeps.models import SQLProfile
 
 
 @pytest.fixture
-def mock_sql_profile():
-    """Create a mock SQLProfile for testing."""
+def mock_sql_profile() -> SQLProfile:
+    """Create a mock SQLProfile for testing.
+
+    Returns:
+        SQLProfile: A sample SQLProfile for testing
+    """
     return SQLProfile(
         dependencies={
             "users": ["id", "name", "email"],
@@ -26,7 +34,7 @@ class TestAppMain:
     """Test suite for app/main.py."""
 
     @patch("streamlit.set_page_config")
-    def test_app_configuration(self, mock_set_page_config):
+    def test_app_configuration(self, mock_set_page_config: MagicMock) -> None:
         """Test the app sets the correct page configuration."""
         # Import the app module to trigger set_page_config
         # Reload to ensure set_page_config is called
@@ -44,7 +52,7 @@ class TestAppMain:
 
     @patch("sqldeps.app.main.st")
     @patch("sqldeps.app.main.Path")
-    def test_basic_ui_elements(self, mock_path, mock_st):
+    def test_basic_ui_elements(self, mock_path: MagicMock, mock_st: MagicMock) -> None:
         """Test basic UI elements are created."""
         # Setup mocks
         mock_logo_path = MagicMock()
@@ -75,9 +83,22 @@ class TestAppMain:
     @patch("sqldeps.app.main.Path")
     @patch("sqldeps.app.main.sqlparse")
     def test_sql_processing(
-        self, mock_sqlparse, mock_path, mock_st, mock_create_extractor, mock_sql_profile
-    ):
-        """Test SQL processing with a text input."""
+        self,
+        mock_sqlparse: MagicMock,
+        mock_path: MagicMock,
+        mock_st: MagicMock,
+        mock_create_extractor: MagicMock,
+        mock_sql_profile: SQLProfile,
+    ) -> None:
+        """Test SQL processing with a text input.
+
+        Args:
+            mock_sqlparse: Mock for sqlparse module
+            mock_path: Mock for Path class
+            mock_st: Mock for streamlit module
+            mock_create_extractor: Mock for create_extractor function
+            mock_sql_profile: SQLProfile fixture
+        """
         # Setup mocks
         mock_logo_path = MagicMock()
         mock_path.return_value.parent.return_value.joinpath.return_value = (
@@ -115,14 +136,23 @@ class TestAppMain:
     @patch("os.unlink")
     def test_sql_file_upload(
         self,
-        mock_unlink,
-        mock_tempfile,
-        mock_path,
-        mock_st,
-        mock_create_extractor,
-        mock_sql_profile,
-    ):
-        """Test SQL file upload processing."""
+        mock_unlink: MagicMock,
+        mock_tempfile: MagicMock,
+        mock_path: MagicMock,
+        mock_st: MagicMock,
+        mock_create_extractor: MagicMock,
+        mock_sql_profile: SQLProfile,
+    ) -> None:
+        """Test SQL file upload processing.
+
+        Args:
+            mock_unlink: Mock for os.unlink
+            mock_tempfile: Mock for tempfile.NamedTemporaryFile
+            mock_path: Mock for Path class
+            mock_st: Mock for streamlit module
+            mock_create_extractor: Mock for create_extractor function
+            mock_sql_profile: SQLProfile fixture
+        """
         # Setup mocks
         mock_logo_path = MagicMock()
         mock_path.return_value.parent.return_value.joinpath.return_value = (
@@ -169,14 +199,23 @@ class TestAppMain:
     @patch("sqldeps.app.main.sqlparse")
     def test_database_validation(
         self,
-        mock_sqlparse,
-        mock_path,
-        mock_st,
-        mock_db_connector,
-        mock_create_extractor,
-        mock_sql_profile,
-    ):
-        """Test database validation functionality."""
+        mock_sqlparse: MagicMock,
+        mock_path: MagicMock,
+        mock_st: MagicMock,
+        mock_db_connector: MagicMock,
+        mock_create_extractor: MagicMock,
+        mock_sql_profile: SQLProfile,
+    ) -> None:
+        """Test database validation functionality.
+
+        Args:
+            mock_sqlparse: Mock for sqlparse module
+            mock_path: Mock for Path class
+            mock_st: Mock for streamlit module
+            mock_db_connector: Mock for PostgreSQLConnector
+            mock_create_extractor: Mock for create_extractor function
+            mock_sql_profile: SQLProfile fixture
+        """
         # Setup mocks
         mock_logo_path = MagicMock()
         mock_path.return_value.parent.return_value.joinpath.return_value = (
@@ -234,9 +273,20 @@ class TestAppMain:
     @patch("sqldeps.app.main.Path")
     @patch("sqldeps.app.main.sqlparse")
     def test_error_handling_alternative(
-        self, mock_sqlparse, mock_path, mock_st, mock_create_extractor
-    ):
-        """Test error handling in the app by checking overall control flow."""
+        self,
+        mock_sqlparse: MagicMock,
+        mock_path: MagicMock,
+        mock_st: MagicMock,
+        mock_create_extractor: MagicMock,
+    ) -> None:
+        """Test error handling in the app by checking overall control flow.
+
+        Args:
+            mock_sqlparse: Mock for sqlparse module
+            mock_path: Mock for Path class
+            mock_st: Mock for streamlit module
+            mock_create_extractor: Mock for create_extractor function
+        """
         # Setup mocks
         mock_logo_path = MagicMock()
         mock_path.return_value.parent.return_value.joinpath.return_value = (

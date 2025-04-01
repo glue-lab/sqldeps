@@ -1,4 +1,7 @@
-"""Unit tests for GroqExtractor."""
+"""Unit tests for GroqExtractor.
+
+This module tests the Groq-specific LLM implementation.
+"""
 
 from unittest.mock import MagicMock, patch
 
@@ -10,7 +13,7 @@ from sqldeps.llm_parsers.groq import GroqExtractor
 class TestGroqExtractor:
     """Test suite for GroqExtractor."""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test proper initialization with API key."""
         with patch.dict("os.environ", {"GROQ_API_KEY": "fake-key"}):
             extractor = GroqExtractor(model="llama-3.3-70b-versatile")
@@ -19,7 +22,7 @@ class TestGroqExtractor:
             assert extractor.framework == "groq"
             assert hasattr(extractor, "client")
 
-    def test_initialization_without_api_key(self):
+    def test_initialization_without_api_key(self) -> None:
         """Test initialization fails without API key."""
         with (
             patch.dict("os.environ", clear=True),
@@ -27,7 +30,7 @@ class TestGroqExtractor:
         ):
             GroqExtractor(model="llama-3.3-70b-versatile")
 
-    def test_query_llm(self):
+    def test_query_llm(self) -> None:
         """Test LLM query functionality."""
         with patch.dict("os.environ", {"GROQ_API_KEY": "fake-key"}):
             extractor = GroqExtractor(model="llama-3.3-70b-versatile")

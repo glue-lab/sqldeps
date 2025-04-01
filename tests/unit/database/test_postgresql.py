@@ -1,4 +1,7 @@
-"""Unit tests for PostgreSQLConnector."""
+"""Unit tests for PostgreSQLConnector.
+
+This module contains unit tests for the PostgreSQL connector functionality.
+"""
 
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
@@ -13,7 +16,7 @@ from sqldeps.database.postgresql import PostgreSQLConnector
 class TestPostgreSQLConnector:
     """Test suite for PostgreSQLConnector."""
 
-    def test_initialization_with_params(self):
+    def test_initialization_with_params(self) -> None:
         """Test initialization with direct parameters."""
         # Mock both create_engine and inspect
         with (
@@ -38,7 +41,7 @@ class TestPostgreSQLConnector:
             mock_inspect.assert_called_once()
             assert connector.inspector == mock_inspector
 
-    def test_initialization_missing_params(self):
+    def test_initialization_missing_params(self) -> None:
         """Test initialization fails with missing parameters."""
         with (
             pytest.raises(ValueError, match="Missing required database parameters"),
@@ -48,7 +51,7 @@ class TestPostgreSQLConnector:
                 host=None, database="testdb", username="user", password="pass"
             )
 
-    def test_initialization_with_config_file(self):
+    def test_initialization_with_config_file(self) -> None:
         """Test initialization with YAML config file."""
         config_data = {
             "database": {
@@ -80,7 +83,7 @@ class TestPostgreSQLConnector:
             assert "configdb" in conn_string
             assert "configuser" in conn_string
 
-    def test_get_schema(self):
+    def test_get_schema(self) -> None:
         """Test schema retrieval functionality."""
         with (
             patch("sqldeps.database.postgresql.create_engine"),
@@ -110,7 +113,7 @@ class TestPostgreSQLConnector:
             assert list(result.columns) == ["schema", "table", "column", "data_type"]
             assert list(result["column"]) == ["id", "name"]
 
-    def test_get_schema_with_specific_schemas(self):
+    def test_get_schema_with_specific_schemas(self) -> None:
         """Test schema retrieval for specific schemas."""
         with (
             patch("sqldeps.database.postgresql.create_engine"),
@@ -139,7 +142,7 @@ class TestPostgreSQLConnector:
             assert result["table"][0] == "orders"
             assert result["column"][0] == "order_id"
 
-    def test_pgpass_lookup(self):
+    def test_pgpass_lookup(self) -> None:
         """Test .pgpass file password lookup."""
         pgpass_content = (
             "localhost:5432:testdb:user:secretpass\n*:5432:*:admin:adminpass"

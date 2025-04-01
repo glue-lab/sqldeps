@@ -1,4 +1,8 @@
-"""Utility functions for SQLDeps."""
+"""Utility functions for SQLDeps.
+
+This module provides helper functions for finding SQL files, merging SQL profiles,
+and performing schema validation and comparison.
+"""
 
 from pathlib import Path
 
@@ -21,6 +25,11 @@ def find_sql_files(
 
     Returns:
         List of file paths
+
+    Raises:
+        FileNotFoundError: If folder doesn't exist
+        NotADirectoryError: If path is not a directory
+        ValueError: If no SQL files are found
     """
     folder_path = Path(folder_path)
 
@@ -50,7 +59,14 @@ def find_sql_files(
 
 
 def merge_profiles(analyses: list[SQLProfile]) -> SQLProfile:
-    """Merges multiple SQLProfile objects into a single one."""
+    """Merges multiple SQLProfile objects into a single one.
+
+    Args:
+        analyses: List of SQLProfile objects to merge
+
+    Returns:
+        A new SQLProfile with merged dependencies and outputs
+    """
     merged_dependencies = {}
     merged_outputs = {}
 
@@ -80,17 +96,19 @@ def merge_profiles(analyses: list[SQLProfile]) -> SQLProfile:
 def merge_schemas(
     df_extracted_schema: pd.DataFrame, df_db_schema: pd.DataFrame
 ) -> pd.DataFrame:
-    """Matches extracted SQL dependencies with the actual database schema,
-    handling both exact schema matches and schema-agnostic matches.
+    """Matches extracted SQL dependencies with the actual database schema.
+
+    Handles both exact schema matches and schema-agnostic matches.
     Expands wildcards ('*') to match all columns from the relevant table(s).
     Handles tables with no columns (None).
 
     Args:
-        df_extracted_schema (pd.DataFrame): Extracted table-column dependencies.
-        df_db_schema (pd.DataFrame): Actual database schema information.
+        df_extracted_schema: Extracted table-column dependencies
+        df_db_schema: Actual database schema information
 
     Returns:
-        pd.DataFrame: Merged schema with an `exact_match` flag.
+        Merged schema with an `exact_match` flag indicating whether
+        the schema name matched exactly
     """
     # Create copy to avoid modifying input
     df_extracted = df_extracted_schema.copy()
@@ -195,11 +213,12 @@ def schema_diff(
     """Checks if extracted schema entries exist in the database schema.
 
     Args:
-        df_extracted_schema (pd.DataFrame): Extracted table-column dependencies.
-        df_db_schema (pd.DataFrame): Actual database schema information.
+        df_extracted_schema: Extracted table-column dependencies
+        df_db_schema: Actual database schema information
+        copy: Whether to create a copy of the input DataFrame
 
     Returns:
-        pd.DataFrame: The extracted schema with an added `exist_db` flag.
+        The extracted schema with an added `match_db` flag
     """
     # Copy dataframe to avoid in-place update
     if copy:
@@ -222,7 +241,7 @@ def schema_diff(
     )
     db_table_agnostic = set(df_db_schema["table"])
 
-    def check_existence(row):
+    def check_existence(row: pd.Series) -> bool:
         """Helper function to determine if a row exists in the DB schema."""
         if pd.notna(row["schema"]):
             if row["column"] == "*":

@@ -1,4 +1,8 @@
-"""Unit tests for BaseSQLExtractor."""
+"""Unit tests for BaseSQLExtractor.
+
+This module contains tests for the common functionality provided by the
+BaseSQLExtractor abstract base class.
+"""
 
 import json
 from pathlib import Path
@@ -17,28 +21,56 @@ class MockSQLExtractor(BaseSQLExtractor):
     that can be used in tests with mocked LLM responses.
     """
 
-    def __init__(self, model: str = "test-model", params=None, prompt_path=None):
+    def __init__(
+        self,
+        model: str = "test-model",
+        params: dict | None = None,
+        prompt_path: str | None = None,
+    ) -> None:
+        """Initialize the mock extractor.
+
+        Args:
+            model: Model name
+            params: Additional parameters
+            prompt_path: Path to custom prompt file
+        """
         super().__init__(model, params, prompt_path)
 
     def _query_llm(self, prompt: str) -> str:
         """Implement the abstract method from the parent class.
 
         In actual tests, this method will typically be mocked.
+
+        Args:
+            prompt: Prompt to send to the LLM
+
+        Returns:
+            Empty string (will be mocked in tests)
         """
         return ""
 
 
 @pytest.fixture
-def mock_extractor():
-    """Provide a mock SQL extractor for tests."""
+def mock_extractor() -> MockSQLExtractor:
+    """Provide a mock SQL extractor for tests.
+
+    Returns:
+        MockSQLExtractor: A concrete implementation of BaseSQLExtractor
+    """
     return MockSQLExtractor()
 
 
 @pytest.fixture
-def mock_sql_response():
-    """Create a standard SQL dependency response."""
+def mock_sql_response() -> callable:
+    """Create a standard SQL dependency response.
 
-    def _create_response(dependencies=None, outputs=None):
+    Returns:
+        function: A function that creates JSON responses with given dependencies/outputs
+    """
+
+    def _create_response(
+        dependencies: dict | None = None, outputs: dict | None = None
+    ) -> str:
         return json.dumps(
             {"dependencies": dependencies or {}, "outputs": outputs or {}}
         )
@@ -49,13 +81,15 @@ def mock_sql_response():
 class TestBaseSQLExtractor:
     """Test suite for BaseSQLExtractor."""
 
-    def test_initialization(self, mock_extractor):
+    def test_initialization(self, mock_extractor: MockSQLExtractor) -> None:
         """Test proper initialization of BaseSQLExtractor."""
         assert mock_extractor.model == "test-model"
         assert mock_extractor.framework == "mocksql"
         assert mock_extractor.params == {"temperature": 0}
 
-    def test_extract_from_query(self, mock_extractor, mock_sql_response):
+    def test_extract_from_query(
+        self, mock_extractor: MockSQLExtractor, mock_sql_response: callable
+    ) -> None:
         """Test extraction from a SQL query."""
         response = mock_sql_response(
             dependencies={"table1": ["col1", "col2"]}, outputs={"table2": ["col3"]}
@@ -69,7 +103,9 @@ class TestBaseSQLExtractor:
         assert result.outputs == {"table2": ["col3"]}
         mock_extractor._query_llm.assert_called_once()
 
-    def test_extract_from_file(self, mock_extractor, mock_sql_response):
+    def test_extract_from_file(
+        self, mock_extractor: MockSQLExtractor, mock_sql_response: callable
+    ) -> None:
         """Test extraction from a SQL file."""
         mock_sql = "SELECT * FROM users"
         response = mock_sql_response(dependencies={"users": ["*"]})
@@ -85,7 +121,7 @@ class TestBaseSQLExtractor:
         assert result.dependencies == {"users": ["*"]}
         assert result.outputs == {}
 
-    def test_file_not_found(self, mock_extractor):
+    def test_file_not_found(self, mock_extractor: MockSQLExtractor) -> None:
         """Test handling of file not found."""
         with (
             patch.object(Path, "exists", return_value=False),
@@ -93,7 +129,7 @@ class TestBaseSQLExtractor:
         ):
             mock_extractor.extract_from_file("nonexistent.sql")
 
-    def test_extract_from_folder(self, mock_extractor):
+    def test_extract_from_folder(self, mock_extractor: MockSQLExtractor) -> None:
         """Test extraction from a folder."""
         with patch("sqldeps.llm_parsers.base.find_sql_files") as mock_find:
             # Setup mock files
@@ -121,12 +157,20 @@ class TestBaseSQLExtractor:
             ('{"only_dependencies": {}}', "Missing required keys"),
         ],
     )
-    def test_process_response_errors(self, mock_extractor, response, error_pattern):
-        """Test handling of different error conditions."""
+    def test_process_response_errors(
+        self, mock_extractor: MockSQLExtractor, response: str, error_pattern: str
+    ) -> None:
+        """Test handling of different error conditions.
+
+        Args:
+            mock_extractor: Mock extractor fixture
+            response: Response string to process
+            error_pattern: Expected error message pattern
+        """
         with pytest.raises(ValueError, match=error_pattern):
             mock_extractor._process_response(response)
 
-    def test_load_prompts_default(self, mock_extractor):
+    def test_load_prompts_default(self, mock_extractor: MockSQLExtractor) -> None:
         """Test loading default prompts."""
         # Define a dict that mimics parsed YAML
         mock_yaml_data = {
@@ -144,7 +188,7 @@ class TestBaseSQLExtractor:
             assert extractor.prompts["system_prompt"] == "test system prompt"
             assert extractor.prompts["user_prompt"] == "test user prompt"
 
-    def test_normalize_extensions(self):
+    def test_normalize_extensions(self) -> None:
         """Test normalization of file extensions."""
         result = MockSQLExtractor._normalize_extensions({".SQL", "sql", ".Sql"})
         assert result == {"sql"}

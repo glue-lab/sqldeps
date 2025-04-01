@@ -1,4 +1,9 @@
-# tests/test_cache.py
+"""Unit tests for cache.py.
+
+This module tests the caching functionality for storing and retrieving
+SQL dependency extraction results.
+"""
+
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
@@ -7,7 +12,7 @@ from sqldeps.cache import cleanup_cache, get_cache_path, load_from_cache, save_t
 from sqldeps.models import SQLProfile
 
 
-def test_get_cache_path():
+def test_get_cache_path() -> None:
     """Test generation of cache file paths based on file content."""
     # Set up mock file content
     mock_content = b"SELECT * FROM table"
@@ -39,7 +44,7 @@ def test_get_cache_path():
         mock_hash_instance.hexdigest.assert_called_once()
 
 
-def test_save_load_cache():
+def test_save_load_cache() -> None:
     """Test saving and loading from cache."""
     # Create a test SQLProfile
     profile = SQLProfile(
@@ -69,7 +74,7 @@ def test_save_load_cache():
             assert loaded.outputs == profile.outputs
 
 
-def test_cleanup_cache_success():
+def test_cleanup_cache_success() -> None:
     """Test successful cleanup of cache directory."""
     # Setup - create a mock cache directory with some files
     mock_cache_dir = Path("mock_cache_dir")
@@ -99,7 +104,7 @@ def test_cleanup_cache_success():
         mock_logger.info.assert_called()  # Should log success
 
 
-def test_cleanup_cache_non_empty_dir():
+def test_cleanup_cache_non_empty_dir() -> None:
     """Test cleanup when directory still has other files."""
     mock_cache_dir = Path("mock_cache_dir")
 
@@ -126,7 +131,7 @@ def test_cleanup_cache_non_empty_dir():
         )
 
 
-def test_cleanup_cache_error():
+def test_cleanup_cache_error() -> None:
     """Test cleanup when an error occurs."""
     mock_cache_dir = Path("mock_cache_dir")
 
@@ -146,7 +151,7 @@ def test_cleanup_cache_error():
         mock_logger.warning.assert_called_once()  # Should log warning
 
 
-def test_cleanup_cache_nonexistent():
+def test_cleanup_cache_nonexistent() -> None:
     """Test cleanup when cache directory doesn't exist."""
     mock_cache_dir = Path("nonexistent_dir")
 

@@ -1,11 +1,14 @@
-"""Unit tests for config.py."""
+"""Unit tests for config.py.
+
+This module tests configuration loading functionality.
+"""
 
 from unittest.mock import mock_open, patch
 
 from sqldeps.config import load_config
 
 
-def test_load_config():
+def test_load_config() -> None:
     """Test loading configuration from a YAML file."""
     # Simple test YAML with nested keys
     config_yaml = """

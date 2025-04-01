@@ -1,3 +1,9 @@
+"""Command-line interface for SQLDeps.
+
+This module provides a command-line interface for extracting SQL dependencies
+from files or directories and optionally validating them against a database schema.
+"""
+
 import json
 import subprocess
 import sys
@@ -12,6 +18,7 @@ from loguru import logger
 from sqldeps import __version__
 from sqldeps.cache import cleanup_cache
 from sqldeps.llm_parsers import BaseSQLExtractor, create_extractor
+from sqldeps.models import SQLProfile
 from sqldeps.utils import merge_profiles
 
 # Main Typer app and subcommands
@@ -44,7 +51,26 @@ def extract_dependencies(
     use_cache: bool = True,
     clear_cache: bool = False,
 ) -> dict:
-    """Extract dependencies from a file or directory."""
+    """Extract dependencies from a file or directory.
+
+    Args:
+        extractor: The SQLExtractor instance to use
+        fpath: Path to a SQL file or directory containing SQL files
+        recursive: Whether to recursively scan directories
+        merge_sql_profiles: Whether to merge all SQL profiles into a single one
+        valid_extensions: Set of valid file extensions to process (default: {sql})
+        n_workers: Number of worker processes for parallel execution
+        rpm: Maximum requests per minute for API rate limiting
+        use_cache: Whether to use cached results
+        clear_cache: Whether to clear the cache after processing
+
+    Returns:
+        Dictionary mapping file paths to SQLProfile objects, or a single SQLProfile
+        if merge_sql_profiles is True
+
+    Raises:
+        ValueError: If no dependencies could be extracted
+    """
     logger.info(
         f"Extracting dependencies from {'file' if fpath.is_file() else 'folder'}: "
         f"{fpath}"
@@ -71,7 +97,21 @@ def match_dependencies_against_schema(
     db_credentials: Path | None,
     db_dialect: str = "postgresql",
 ) -> dict:
-    """Match extracted dependencies against a database schema."""
+    """Match extracted dependencies against a database schema.
+
+    Args:
+        extractor: The SQLExtractor instance to use
+        dependencies: Extracted dependencies to validate
+        db_target_schemas: Comma-separated list of database schemas to validate against
+        db_credentials: Path to a YAML file containing database credentials
+        db_dialect: Database dialect to use (currently only 'postgresql' is supported)
+
+    Returns:
+        DataFrame containing matched schema information
+
+    Raises:
+        ValueError: If an unsupported database dialect is specified
+    """
     if db_dialect.lower() == "postgresql":
         from .database import PostgreSQLConnector as DBConnector
     else:
@@ -101,9 +141,18 @@ def match_dependencies_against_schema(
 
 
 def save_output(
-    dependencies: dict, output_path: Path, is_schema_match: bool = False
+    dependencies: SQLProfile | dict, output_path: Path, is_schema_match: bool = False
 ) -> None:
-    """Save extracted dependencies to the specified output format."""
+    """Save extracted dependencies to the specified output format.
+
+    Args:
+        dependencies: SQLProfile object or dictionary of SQLProfile objects
+        output_path: Path where the output will be saved
+        is_schema_match: Whether the result is from a database schema match
+
+    Returns:
+        None
+    """
     if output_path.suffix.lower() == ".csv" or is_schema_match:
         # Dataframe output
         output_path = output_path.with_suffix(".csv")
@@ -134,8 +183,15 @@ def save_output(
         logger.success(f"Saved to JSON: {output_path}")
 
 
-def version_callback(value: bool):
-    """Print version and exit."""
+def version_callback(value: bool) -> None:
+    """Print version and exit.
+
+    Args:
+        value: Whether the flag was set
+
+    Returns:
+        None
+    """
     if value:
         typer.echo(f"SQLDeps version: {__version__}")
         raise typer.Exit()
@@ -149,7 +205,7 @@ def callback(
             "--version", help="Show the version and exit.", callback=version_callback
         ),
     ] = False,
-):
+) -> None:
     """SQL Dependency Extractor.
 
     Analyze SQL files to extract table and column dependencies.
@@ -157,8 +213,15 @@ def callback(
     pass
 
 
-def path_complete(incomplete: str):
-    """Simple path completion."""
+def path_complete(incomplete: str) -> object:
+    """Simple path completion for CLI autocompletion.
+
+    Args:
+        incomplete: The partial path to complete
+
+    Yields:
+        str: Possible path completions
+    """
     for path in Path(".").glob(f"{incomplete}*"):
         if path.is_dir():
             yield f"{path.name}/"
@@ -289,7 +352,7 @@ def extract(
 
 # App subcommand
 @app_cmd.callback(invoke_without_command=True)
-def app_main():
+def app_main() -> None:
     """Run SQLDeps web application."""
     try:
         # Get the path to the app module in the package
@@ -310,7 +373,7 @@ def app_main():
 
 # Cache subcommands
 @cache_cmd.command("clear")
-def cache_clear():
+def cache_clear() -> None:
     """Clear the SQLDeps cache directory."""
     try:
         logger.info("Clearing SQLDeps cache...")

@@ -1,4 +1,7 @@
-"""Unit tests for DeepseekExtractor."""
+"""Unit tests for DeepseekExtractor.
+
+This module tests the DeepSeek-specific LLM implementation.
+"""
 
 from unittest.mock import MagicMock, patch
 
@@ -10,7 +13,7 @@ from sqldeps.llm_parsers.deepseek import DeepseekExtractor
 class TestDeepseekExtractor:
     """Test suite for DeepseekExtractor."""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test proper initialization with API key."""
         with patch.dict("os.environ", {"DEEPSEEK_API_KEY": "fake-key"}):
             extractor = DeepseekExtractor(model="deepseek-chat")
@@ -19,7 +22,7 @@ class TestDeepseekExtractor:
             assert extractor.framework == "deepseek"
             assert hasattr(extractor, "client")
 
-    def test_initialization_without_api_key(self):
+    def test_initialization_without_api_key(self) -> None:
         """Test initialization fails without API key."""
         with (
             patch.dict("os.environ", clear=True),
@@ -27,7 +30,7 @@ class TestDeepseekExtractor:
         ):
             DeepseekExtractor(model="deepseek-chat")
 
-    def test_query_llm(self):
+    def test_query_llm(self) -> None:
         """Test LLM query functionality."""
         with patch.dict("os.environ", {"DEEPSEEK_API_KEY": "fake-key"}):
             extractor = DeepseekExtractor(model="deepseek-chat")

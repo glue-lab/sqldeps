@@ -1,4 +1,7 @@
-"""Unit tests for command-line interface."""
+"""Unit tests for command-line interface.
+
+This module tests the functionality of the CLI commands and related functions.
+"""
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -11,14 +14,22 @@ from sqldeps.models import SQLProfile
 
 
 @pytest.fixture
-def runner():
-    """Create a CLI runner for testing."""
+def runner() -> CliRunner:
+    """Create a CLI runner for testing.
+
+    Returns:
+        CliRunner: A Typer CLI test runner
+    """
     return CliRunner()
 
 
 @pytest.fixture
-def mock_sql_profile():
-    """Create a mock SQLProfile for testing."""
+def mock_sql_profile() -> SQLProfile:
+    """Create a mock SQLProfile for testing.
+
+    Returns:
+        SQLProfile: A sample SQLProfile for testing
+    """
     return SQLProfile(
         dependencies={"users": ["id", "name"]}, outputs={"reports": ["date", "total"]}
     )
@@ -27,7 +38,7 @@ def mock_sql_profile():
 class TestCLI:
     """Test suite for command-line interface."""
 
-    def test_extract_dependencies(self, mock_sql_profile):
+    def test_extract_dependencies(self, mock_sql_profile: SQLProfile) -> None:
         """Test extraction of dependencies."""
         # Mock the extractor
         mock_extractor = MagicMock()
@@ -46,7 +57,7 @@ class TestCLI:
             assert result == {"file.sql": mock_sql_profile}
             mock_extractor.extract_from_folder.assert_called_once()
 
-    def test_save_output(self, mock_sql_profile, tmp_path):
+    def test_save_output(self, mock_sql_profile: SQLProfile, tmp_path: Path) -> None:
         """Test saving output to different formats."""
         # Test JSON output
         json_path = tmp_path / "output.json"
@@ -64,7 +75,7 @@ class TestCLI:
         save_output(df_mock, csv_path, is_schema_match=True)
         df_mock.to_csv.assert_called_once()
 
-    def test_cli_command(self, runner, mock_sql_profile):
+    def test_cli_command(self, runner: CliRunner, mock_sql_profile: SQLProfile) -> None:
         """Test the CLI command execution using isolated components."""
         with (
             patch("sqldeps.cli.create_extractor") as mock_create_extractor,
@@ -94,7 +105,7 @@ class TestCLI:
             mock_extract.assert_called_once()
             mock_save.assert_called_once()
 
-    def test_cli_error_handling(self, runner):
+    def test_cli_error_handling(self) -> None:
         """Test error handling in CLI using mock directly."""
         with patch("sqldeps.cli.create_extractor") as mock_create_extractor:
             # Make the extractor creation raise an exception
@@ -119,7 +130,7 @@ class TestCLI:
             # Verify the exit code is 1
             assert excinfo.value.exit_code == 1
 
-    def test_cli_database_validation(self, runner, mock_sql_profile):
+    def test_cli_database_validation(self, mock_sql_profile: SQLProfile) -> None:
         """Test database validation logic directly."""
         with (
             patch("sqldeps.cli.create_extractor") as mock_create_extractor,
@@ -151,7 +162,7 @@ class TestCLI:
             # Verify function calls
             mock_match.assert_called_once()
 
-    def test_app_version(self, runner):
+    def test_app_version(self, runner: CliRunner) -> None:
         """Test CLI app version command."""
         # The version command is a safer option to test CLI integration
         result = runner.invoke(app, ["--version"])
@@ -160,7 +171,7 @@ class TestCLI:
         assert result.exit_code == 0
         assert "SQLDeps version:" in result.output
 
-    def test_app_command(self):
+    def test_app_command(self) -> None:
         """Test the app command functionality."""
         with (
             patch("sqldeps.cli.subprocess.run") as mock_run,
@@ -171,7 +182,7 @@ class TestCLI:
             app_main()
             mock_run.assert_called_once()
 
-    def test_cache_clear_command(self):
+    def test_cache_clear_command(self) -> None:
         """Test the cache clear command."""
         with patch("sqldeps.cli.cleanup_cache", return_value=True) as mock_cleanup:
             from sqldeps.cli import cache_clear

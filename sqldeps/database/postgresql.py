@@ -1,3 +1,9 @@
+"""PostgreSQL database connector.
+
+This module provides the PostgreSQL-specific implementation of the SQLBaseConnector
+for connecting to PostgreSQL databases and retrieving schema information.
+"""
+
 import os
 from pathlib import Path
 from typing import Any
@@ -7,13 +13,13 @@ import pandas as pd
 import yaml
 from loguru import logger
 from sqlalchemy import create_engine, inspect
+from sqlalchemy.engine.base import Engine
 
 from .base import SQLBaseConnector
 
 
 class PostgreSQLConnector(SQLBaseConnector):
-    """PostgreSQL database utility class that provides secure connection management and
-    schema inspection capabilities.
+    """PostgreSQL database class to provide connection and schema inspection.
 
     Supports multiple configuration sources for database connection parameters:
     - Direct parameters in constructor
@@ -68,6 +74,9 @@ class PostgreSQLConnector(SQLBaseConnector):
                 database: mydb
                 username: user
                 password: pass
+
+        Raises:
+            ValueError: If required parameters are missing
         """
         # Load and validate connection parameters
         connection_params = self._resolve_params(
@@ -79,7 +88,14 @@ class PostgreSQLConnector(SQLBaseConnector):
         self.inspector = inspect(self.engine)
 
     def _load_config(self, config_path: Path | None) -> dict[str, Any]:
-        """Load optional YAML config file if provided."""
+        """Load optional YAML config file if provided.
+
+        Args:
+            config_path: Path to YAML configuration file
+
+        Returns:
+            Dictionary with configuration parameters or empty dict if file not found
+        """
         if not config_path:
             return {}
 
@@ -91,7 +107,11 @@ class PostgreSQLConnector(SQLBaseConnector):
             return {}
 
     def _get_env_vars(self) -> dict[str, Any]:
-        """Extract environment variables with standard PostgreSQL naming."""
+        """Extract environment variables with standard PostgreSQL naming.
+
+        Returns:
+            Dictionary with environment variables
+        """
         return {
             "host": os.getenv("DB_HOST"),
             "port": os.getenv("DB_PORT"),
@@ -184,6 +204,20 @@ class PostgreSQLConnector(SQLBaseConnector):
 
         When the password is not provided through the sources above:
             - Look up in .pgpass using the provided credentials
+
+        Args:
+            host: Database host address
+            port: Database port
+            database: Database name
+            username: Database username
+            password: Database password
+            config_path: Path to configuration file
+
+        Returns:
+            Dictionary with resolved connection parameters
+
+        Raises:
+            ValueError: If required parameters are missing
         """
         params = {
             "host": None,
@@ -238,8 +272,15 @@ class PostgreSQLConnector(SQLBaseConnector):
 
         return params
 
-    def _create_engine(self, params: dict[str, Any]):
-        """Create SQLAlchemy engine without storing credentials."""
+    def _create_engine(self, params: dict[str, Any]) -> Engine:
+        """Create SQLAlchemy engine without storing credentials.
+
+        Args:
+            params: Dictionary of connection parameters
+
+        Returns:
+            SQLAlchemy engine
+        """
         connection_string = (
             f"postgresql://{params['username']}:{quote_plus(params['password'])}@"
             f"{params['host']}:{params['port']}/{params['database']}"
@@ -259,6 +300,9 @@ class PostgreSQLConnector(SQLBaseConnector):
 
         Returns:
             DataFrame with columns: schema, table, column, data_type
+
+        Raises:
+            TypeError: If schemas is not None, string, or list of strings
         """
         if schemas is None:
             schema_list = self.inspector.get_schema_names()
