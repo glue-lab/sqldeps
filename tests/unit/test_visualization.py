@@ -9,8 +9,8 @@ def test_visualize_sql_dependencies_basic():
     # Simple mock dependencies data
     sql_profiles = {
         "file1.sql": SQLProfile(
-            dependencies={"table1": ["col1", "col2"]},
-            outputs={"table2": ["col3"]}),
+            dependencies={"table1": ["col1", "col2"]}, outputs={"table2": ["col3"]}
+        ),
     }
 
     # Call the visualization function
