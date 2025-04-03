@@ -33,6 +33,8 @@ extractor = create_extractor(
 )
 ```
 
+Note that the API keys should be set through environment variables as explained in the [Installation](../getting-started/installation.md) guide.
+
 ## Extracting Dependencies
 
 Once you have an extractor, you can use it to extract dependencies from SQL queries, files, or folders:
@@ -72,6 +74,21 @@ result = extractor.extract_from_folder(
     "path/to/sql_folder",
     recursive=True,
     valid_extensions={"sql", "pgsql", "tsql"}
+)
+
+# Process with parallel workers (uses all available CPUs)
+result = extractor.extract_from_folder(
+    "path/to/sql_folder",
+    recursive=True,
+    n_workers=-1, # -1 means all available workers
+    rpm=100  # Rate limit to 100 requests per minute
+)
+
+# Merge results into a single SQLProfile
+result = extractor.extract_from_folder(
+    "path/to/sql_folder",
+    recursive=True,
+    merge_sql_profiles=True
 )
 ```
 
@@ -163,3 +180,26 @@ Use the custom prompt with:
 ```python
 extractor = create_extractor(prompt_path="path/to/custom_prompt.yml")
 ```
+
+## Using Cache
+
+SQLDeps can cache extraction results to avoid reprocessing the same files:
+
+```python
+# Enable cache (default: True)
+result = extractor.extract_from_folder(
+    "path/to/sql_folder",
+    recursive=True,
+    use_cache=True
+)
+
+# Clear cache after processing
+result = extractor.extract_from_folder(
+    "path/to/sql_folder",
+    recursive=True,
+    use_cache=True,
+    clear_cache=True
+)
+```
+
+The cache is stored in the `.sqldeps_cache` directory.

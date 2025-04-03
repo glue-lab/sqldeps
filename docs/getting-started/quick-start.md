@@ -43,34 +43,41 @@ df_format = result.to_dataframe()
 
 ```bash
 # Basic example with default settings
-sqldeps path/to/query.sql
+sqldeps extract path/to/query.sql
 
 # Specify framework and output format
-sqldeps path/to/query.sql --framework=openai --model=gpt-4o -o query_deps.csv
+sqldeps extract path/to/query.sql --framework=openai --model=gpt-4o -o results.json
 
-# Process a folder recursively with database validation
-sqldeps data/sql_folder \
-    --recursive \
-    --framework=deepseek \
-    --db-match-schema \
-    --db-target-schemas public,sales \
-    --db-credentials configs/database.yml \
-    -o folder_deps.csv
+# Scan a folder recursively with intelligent parallelization
+sqldeps extract \
+    data/sql_folder \       # Automatically detect if path is file or folder       
+    --recursive \           # Scan folder recursively
+    --framework=deepseek \  # Specify framework/provider
+    --rpm 50                # Maximum 50 requests per minute
+    --n-workers -1 \        # Use all available processors
+    -o results.csv          # Output a dataframe as CSV instead of JSON
+```
+
+```bash
+# Get help on available commands
+sqldeps --help
+
+# Get help on extract - the main command
+sqldeps extract --help
 ```
 
 ## Web Application
 
-SQLDeps includes a Streamlit-based web interface for interactive exploration:
+SQLDeps includes a Streamlit-based web interface:
 
 ```bash
-# Install with web app dependencies
-pip install "sqldeps[app]"
-
-# Run the app
-streamlit run app/main.py
+# Run the web app
+sqldeps app
 ```
 
-## Example Output
+**Note**: The web application is designed for single-file extraction and demonstration purposes. For processing multiple files or entire folders, use the API or CLI instead.
+
+## Example
 
 Given this SQL query:
 
@@ -106,11 +113,11 @@ SQLDeps will extract:
 Notice how:
 
 - CTE (`user_orders`) is correctly excluded
-- Real source tables (`orders`, `users`) and respective columns are identified as dependencies
-- Target table (`transactions.user_order_summary`) is identified as an output
+- Real source tables (`orders`, `users`) are included as dependencies
+- Target table (`transactions.user_order_summary`) is correctly identified as output
 
-Next steps:
+## Next Steps
 
-- Read the [API Usage](../user-guide/api-usage.md) guide for detailed and flexible API options
-- Learn about [CLI Usage](../user-guide/cli-usage.md) for command-line features
-- Explore [Database Integration](../user-guide/database-integration.md) for schema validation
+- Read the [API Usage](../user-guide/api-usage.md) guide for detailed API options
+- Read the [CLI Usage](../user-guide/cli-usage.md) for easy-to-use command-line features
+- Explore [Database Integration](../user-guide/database-integration.md) for schema validation and data type retrieval

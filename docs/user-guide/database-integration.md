@@ -128,7 +128,7 @@ print(f"Found {len(agnostic_matches)} schema-agnostic matches.")
 ### Using the CLI
 
 ```bash
-sqldeps path/to/query.sql \
+sqldeps extract path/to/query.sql \
     --db-match-schema \
     --db-target-schemas public,sales \
     --db-credentials configs/database.yml \

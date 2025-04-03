@@ -28,6 +28,8 @@ A tool that automatically extracts and maps SQL dependencies and outputs using L
 
 - **Documentation**: [https://sqldeps.readthedocs.io/](https://sqldeps.readthedocs.io/)
 - **Code repositoty**: [https://github.com/glue-lab/sqldeps](https://sqldeps.readthedocs.io/)
+<!-- - **Simulate SQLDeps savings for your team**: [Streamlit WebApp](https://sqldeps-simulator.streamlit.app/) -->
+
 
 ---
 
@@ -53,11 +55,24 @@ It intelligently filters out temporary constructs like CTEs and derived tables, 
 pip install sqldeps
 ```
 
+For additional functionality:
+
+```bash
+# Install with web app dependencies
+pip install "sqldeps[app]"
+
+# Install with data visualization dependencies
+pip install "sqldeps[dataviz]"
+
+# Install all optional dependencies
+pip install "sqldeps[app,dataviz]"
+```
+
 ## Quick Start
 
 SQLDeps provides both API and CLI interfaces:
-- **API**: Enables flexibility for Python developers to integrate with their applications
-- **CLI**: Offers an easy-to-use command-line interface for quick analysis
+- **API**: Flexible for Python developers to integrate into scripts, notebooks, or applications.
+- **CLI**: Fast and user-friendly for analyzing files or folders directly from the command line.
 
 ### API Usage
 
@@ -100,69 +115,39 @@ df_format = result.to_dataframe()
 
 ```bash
 # Basic example with default settings
-sqldeps path/to/query.sql
+sqldeps extract path/to/query.sql
 
 # Specify framework and output format
-sqldeps path/to/query.sql --framework=openai --model=gpt-4o-mini -o query_deps.csv
+sqldeps extract path/to/query.sql --framework=openai --model=gpt-4o -o results.json
 
-# Process a folder recursively with database validation
-sqldeps data/sql_folder \
-    --recursive \
-    --framework=deepseek \
-    --db-match-schema \
-    --db-target-schemas public,sales \
-    --db-credentials configs/database.yml \
-    -o folder_deps.csv
+# Scan a folder recursively with intelligent parallelization
+sqldeps extract \
+    data/sql_folder \       # Automatically detect if path is file or folder       
+    --recursive \           # Scan folder recursively
+    --framework=deepseek \  # Specify framework/provider
+    --rpm 50                # Maximum 50 requests per minute
+    --n-workers -1 \        # Use all available processors
+    -o results.csv          # Output a dataframe as CSV instead of JSON
 ```
 
 ```bash
-# Access CLI help
+# Get help on available commands
 sqldeps --help
-                                                                                                                                                                                         
- Usage: sqldeps [OPTIONS] COMMAND [ARGS]...                                                                                                                                              
-                                                                                                                                                                                         
- SQL Dependency Extractor - Analyze SQL files to extract table and column dependencies                                                                                                   
-                                                                                                                                                                                         
-╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --version                     Show the version and exit.                                                                                                                              │
-│ --install-completion          Install completion for the current shell.                                                                                                               │
-│ --show-completion             Show completion for the current shell, to copy it or customize the installation.                                                                        │
-│ --help                        Show this message and exit.                                                                                                                             │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ extract   Extract SQL dependencies from file or folder.                                                                                                                               │
-│ app       Run the SQLDeps web application                                                                                                                                             │
-│ cache     Manage SQLDeps cache                                                                                                                                                        │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-# Access CLI help for extraction
-$ sqldeps extract --help
-                                                                                                                                                                                         
- Usage: sqldeps extract [OPTIONS] FPATH                                                                                                                                                  
-                                                                                                                                                                                         
- Extract SQL dependencies from file or folder.                                                                                                                                           
- This tool analyzes SQL files to identify table and column dependencies, optionally validating them against a real database schema.                                                      
-                                                                                                                                                                                         
-╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ *    fpath      PATH  SQL file or directory path [default: None] [required]                                                                                                           │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --framework                                      TEXT     LLM framework to use [groq, openai, deepseek] [default: groq]                                                               │
-│ --model                                          TEXT     Model name for the selected framework [default: None]                                                                       │
-│ --prompt                                         FILE     Path to custom prompt YAML file [default: None]                                                                             │
-│ --recursive          -r                                   Recursively scan folder for SQL files                                                                                       │
-│ --db-match-schema        --no-db-match-schema             Match dependencies against database schema [default: no-db-match-schema]                                                    │
-│ --db-target-schemas                              TEXT     Comma-separated list of target schemas to validate against [default: public]                                                │
-│ --db-credentials                                 FILE     Path to database credentials YAML file [default: None]                                                                      │
-│ --db-dialect                                     TEXT     Database dialect to use for schema validation [default: postgresql]                                                         │
-│ --n-workers                                      INTEGER  Number of workers for parallel processing. Use -1 for all CPU cores, 1 for sequential processing. [default: 1]              │
-│ --rpm                                            INTEGER  Maximum requests per minute for API rate limiting (0 to disable) [default: 100]                                             │
-│ --use-cache              --no-use-cache                   Use local cache for SQL extraction results [default: use-cache]                                                             │
-│ --clear-cache            --no-clear-cache                 Clear local cache after processing [default: no-clear-cache]                                                                │
-│ --output             -o                          PATH     Output file path for extracted dependencies [default: dependencies.json]                                                    │
-│ --help                                                    Show this message and exit.                                                                                                 │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+# Get help on extract - the main command
+sqldeps extract --help
 ```
+
+### Web Application
+
+SQLDeps also includes a Streamlit-based web interface:
+
+```bash
+# Run the web app
+sqldeps app
+```
+
+**Note**: The web application is designed for single-file extraction and demonstration purposes. For processing multiple files or entire folders, use the API or CLI instead.
 
 ## Example
 
@@ -181,9 +166,6 @@ WITH user_orders AS (
 -- Create a new table from the CTE
 CREATE TABLE transactions.user_order_summary AS
 SELECT * FROM user_orders;
-
--- Truncate an existing table before repopulating
-TRUNCATE TABLE order_summary;
 ```
 
 SQLDeps will extract:
@@ -192,21 +174,19 @@ SQLDeps will extract:
 {
   "dependencies": {
     "orders": ["user_id"],
-    "users": ["id", "status"],
-    "order_summary": []
+    "users": ["id", "status"]
   },
   "outputs": {
-    "transactions.user_order_summary": ["*"],
-    "order_summary": []
+    "transactions.user_order_summary": ["*"]
   }
 }
 ```
 
-Note how:
+Notice how:
+
 - CTE (`user_orders`) is correctly excluded
 - Real source tables (`orders`, `users`) are included as dependencies
-- Target tables (`transactions.user_order_summary`, `order_summary`) are correctly identified as outputs
-- For `TRUNCATE` operations, the table appears in both dependencies and outputs because it must exist before truncating and the operation modifies the table
+- Target table (`transactions.user_order_summary`) is correctly identified as output
 
 ## Supported Models
 
@@ -215,7 +195,7 @@ For up-to-date pricing details, please check [Groq](https://groq.com/pricing/), 
 
 ## API Keys / Configuration
 
-You'll need to set up API keys for your chosen LLM provider. Create a `.env` file in your project root (see the provided `.env.example`):
+You'll need to set up API keys for your chosen LLM provider. Create a `.env` file in your project root:
 
 ```
 # LLM API Keys
@@ -231,21 +211,13 @@ DB_USER=username
 DB_PASSWORD=password
 ```
 
-For custom database YAML configuration file (optional): 
-
-```yaml
-# database.yml
-database:
-  host: localhost
-  port: 5432
-  database: mydatabase
-  username: username
-  password: password
-```
+> **Tip:** [Groq](https://console.groq.com/keys) offers free tokens without requiring payment details, making it ideal for getting started quickly.
 
 ## Advanced Usage
 
-### Database Schema Validation
+### Database Schema Matching
+
+SQLDeps allows the user to match SQLDeps results (table/column dependencies and outputs) with database schemas to retrieve column data types.
 
 ```python
 from sqldeps.database import PostgreSQLConnector
@@ -264,21 +236,26 @@ conn = PostgreSQLConnector(
 )
 
 # Match extracted dependencies against database schema
-validated_schema = extractor.match_database_schema(
+matching_schema = extractor.match_database_schema(
     result,
     db_connection=conn,
     target_schemas=["public", "sales"]
 )
 
-# View validation results (pandas DataFrame)
-print(validated_schema)
+# View validation results as a pandas DataFrame
+print(matching_schema)
 ```
 
-### Processing Multiple Files
+For custom database YAML configuration file (optional):
 
-```python
-# Extract dependencies from all SQL files in a folder
-result = extractor.extract_from_folder('/path/to/sql_folder', recursive=True)
+```yml
+# database.yml
+database:
+  host: localhost
+  port: 5432
+  database: mydatabase
+  username: username
+  password: password
 ```
 
 ### Using Custom Prompts
@@ -310,19 +287,24 @@ user_prompt: |
   {sql}
 ```
 
-## Web Application
+### Interactive Visualization of SQL Dependency Graphs
 
-SQLDeps includes a Streamlit-based web interface for interactive exploration of single SQL files:
+SQLDeps provides built-in visualization capabilities to help you understand complex SQL dependencies:
 
-```bash
-# Install with web app dependencies
-pip install "sqldeps[app]"
+```python
+from sqldeps.llm_parsers import create_extractor
+from sqldeps.visualization import visualize_sql_dependencies
 
-# Run the app
-streamlit run app/main.py
+# Create an interactive network graph from multiple SQL files
+extractor = create_extractor()
+sql_profiles = extractor.extract_from_folder("path/to/folder", recursive=False)
+
+# Generate an interactive visualization (saving output to an HTML file)
+figure = visualize_sql_dependencies(sql_profiles, output_path="dependencies.html")
+
+# Show figure
+figure.show()
 ```
-
-**Note**: The web application is currently designed for single-file extraction and demonstration purposes. For processing multiple files or entire folders, use the API or CLI.
 
 ## Documentation
 
@@ -332,10 +314,11 @@ For comprehensive documentation, including API reference and examples, visit [ht
 
 Contributions are welcome! 
 
-- Found a bug? Please open an issue with detailed information.
-- Missing a feature? Feel free to suggest enhancements or submit a pull request.
+- Found a bug? Please [open an issue](https://github.com/glue-lab/sqldeps/issues) with detailed information.
+- Missing a feature? Feel free to [suggest enhancements](https://github.com/glue-lab/sqldeps/discussions/categories/ideas) or submit a pull request.
 
-Check out the [issues page](https://github.com/glue-lab/sqldeps/issues) or submit a pull request.
+Please check out the [Contributing Guide](https://sqldeps.readthedocs.io/en/latest/contributing/) for details.
+
 
 ## License
 

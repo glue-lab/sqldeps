@@ -15,7 +15,11 @@ pip install "sqldeps[app]"
 Start the web application with:
 
 ```bash
-streamlit run app/main.py
+# Using the CLI command
+sqldeps app
+
+# Or directly with streamlit
+streamlit run -m sqldeps.app.main
 ```
 
 This will launch the Streamlit app in your default web browser, typically at `http://localhost:8501`.
@@ -85,13 +89,3 @@ When database matching is enabled, the app will:
 ## Notes
 
 The web application is designed for demonstration and exploration of single SQL files. For processing multiple files or entire folders, use the CLI or API interfaces.
-
-## Customization
-
-The web application can be customized by modifying the `app/main.py` file:
-
-- Adjust default connection parameters
-- Change the list of available models
-- Add custom validation features
-- Modify the UI layout
-- Etc

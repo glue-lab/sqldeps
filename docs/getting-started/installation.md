@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Python 3.10 or higher
-- API keys for your preferred LLM provider (OpenAI, Groq, or DeepSeek)
+- API keys for your preferred LLM provider (Groq, OpenAI, or DeepSeek)
 
 ## Install from PyPI
 
@@ -28,9 +28,9 @@ pip install "sqldeps[app,dataviz]"
 
 ## Setup API Keys
 
-SQLDeps requires API keys for the LLM providers you want to use. 
+SQLDeps requires API keys for the LLM providers you want to use. These keys are set through environment variables.
 
-### Option 1: Environment Variables
+### Environment Variables
 
 Create a `.env` file in your project root with your API keys:
 
@@ -48,23 +48,13 @@ DB_USER=username
 DB_PASSWORD=password
 ```
 
-### Option 2: Direct Configuration
+SQLDeps will automatically load variables from the .env file when you import the package.
 
-You can also provide API keys directly when creating an extractor:
-
-```python
-from sqldeps.llm_parsers import create_extractor
-
-extractor = create_extractor(
-    framework="openai",
-    model="gpt-4o-mini",
-    api_key="your-api-key-here"
-)
-```
+> **Tip:** [Groq](https://console.groq.com/keys) offers free tokens without requiring payment details, making it ideal for getting started quickly.
 
 ## Database Configuration (Optional)
 
-If you plan to use the database schema validation features, you can set up your database credentials in several ways:
+If you plan to use the database features, you can set up your database credentials in several ways:
 
 ### YAML Configuration File
 
