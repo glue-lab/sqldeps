@@ -1,20 +1,20 @@
 """Unit tests for visualization.py."""
 
+from sqldeps.models import SQLProfile
 from sqldeps.visualization import visualize_sql_dependencies
 
 
 def test_visualize_sql_dependencies_basic():
     """Test basic visualization of SQL dependencies."""
     # Simple mock dependencies data
-    dependencies = {
-        "file1.sql": {
-            "dependencies": {"table1": ["col1", "col2"]},
-            "outputs": {"table2": ["col3"]},
-        }
+    sql_profiles = {
+        "file1.sql": SQLProfile(
+            dependencies={"table1": ["col1", "col2"]},
+            outputs={"table2": ["col3"]}),
     }
 
     # Call the visualization function
-    figure = visualize_sql_dependencies(dependencies)
+    figure = visualize_sql_dependencies(sql_profiles)
 
     # Basic assertions to verify the figure was created properly
     assert figure is not None

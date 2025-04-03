@@ -1,13 +1,14 @@
 import os
-from typing import Any
 
 import networkx as nx
 import plotly.colors as pcolors
 import plotly.graph_objects as go
 
+from sqldeps.models import SQLProfile
+
 
 def visualize_sql_dependencies(  # noqa: C901
-    dependencies: dict[str, dict[str, Any]],
+    sql_profiles: dict[str, dict[str, SQLProfile]],
     output_path: str | None = None,
     show_columns: bool = True,
     layout_algorithm: str = "spring",
@@ -25,15 +26,14 @@ def visualize_sql_dependencies(  # noqa: C901
     show_file_text: bool = True,
     show_table_text: bool = False,
     text_font_size: int = 10,
-    show_text_buttons: bool = False,
-    show_layout_buttons: bool = False,
+    show_text_buttons: bool = True,
+    show_layout_buttons: bool = True,
 ) -> go.Figure:
     """
     Create an interactive graph visualization of SQL file dependencies.
 
     Args:
-        dependencies: Dictionary where keys are filenames and values are
-                      dictionaries with "table" -> list of columns
+        sql_profiles: Dictionary with filenames -> SQLProfile
         output_path: Optional path to save the HTML output
         show_columns: Whether to include column details in hover text
         layout_algorithm: Graph layout algorithm ("spring", "circular", "kamada_kawai")
@@ -75,7 +75,10 @@ def visualize_sql_dependencies(  # noqa: C901
         common_table_colorscale = pcolors.sequential.Reds
 
     # Add nodes and edges
-    for filename, deps in dependencies.items():
+    for filename, sql_profile in sql_profiles.items():
+        # Retrieve dependencies from SQLProfile
+        deps = sql_profile.dependencies
+
         # Use just the base filename for display
         base_filename = os.path.basename(filename)
 
@@ -511,7 +514,7 @@ def visualize_sql_dependencies(  # noqa: C901
     # Update layout
     fig.update_layout(
         title=(
-            f"SQL Dependency Graph ({len(dependencies)} files, "
+            f"SQL Dependency Graph ({len(sql_profiles)} files, "
             f"{len(table_usage)} tables)"
         ),
         title_font=dict(size=16),
