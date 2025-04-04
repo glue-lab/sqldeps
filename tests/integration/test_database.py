@@ -1,6 +1,7 @@
 """Integration tests for database connectors.
 
-These tests will be skipped unless a test database is configured.
+These tests connect to an actual PostgreSQL database to verify
+schema retrieval and validation functionality.
 """
 
 import os
@@ -31,8 +32,12 @@ class TestPostgreSQLIntegration:
     """
 
     @pytest.fixture
-    def db_connector(self):
-        """Create a database connector for testing."""
+    def db_connector(self) -> PostgreSQLConnector:
+        """Create a database connector for testing.
+
+        Returns:
+            PostgreSQLConnector: Configured database connector
+        """
         return PostgreSQLConnector(
             host=os.environ.get("TEST_DB_HOST"),
             port=int(os.environ.get("TEST_DB_PORT", "5432")),
@@ -41,7 +46,7 @@ class TestPostgreSQLIntegration:
             password=os.environ.get("TEST_DB_PASSWORD"),
         )
 
-    def test_connection(self, db_connector):
+    def test_connection(self, db_connector: PostgreSQLConnector) -> None:
         """Test that connection to database succeeds."""
         # Just creating the connector should establish a connection
         # If it doesn't, an exception will be raised and the test will fail
@@ -49,7 +54,7 @@ class TestPostgreSQLIntegration:
         assert hasattr(db_connector, "engine")
         assert hasattr(db_connector, "inspector")
 
-    def test_get_schema(self, db_connector):
+    def test_get_schema(self, db_connector: PostgreSQLConnector) -> None:
         """Test retrieving schema information."""
         # Get schema for the public schema
         schema = db_connector.get_schema("public")
@@ -62,6 +67,8 @@ class TestPostgreSQLIntegration:
         # Verify all rows have the correct schema
         assert all(schema["schema"] == "public")
 
+    # Commented out because it takes too long to run
+    # @pytest.mark.slow
     # def test_get_schema_multiple(self, db_connector):
     #     """Test retrieving schema from multiple schemas."""
     #     # Get schema from all available schemas
@@ -75,8 +82,15 @@ class TestPostgreSQLIntegration:
     #     schemas = schema["schema"].unique()
     #     assert len(schemas) > 0
 
-    def test_export_schema_csv(self, db_connector, tmp_path):
-        """Test exporting schema to CSV."""
+    def test_export_schema_csv(
+        self, db_connector: PostgreSQLConnector, tmp_path: str
+    ) -> None:
+        """Test exporting schema to CSV.
+
+        Args:
+            db_connector: PostgreSQL connector fixture
+            tmp_path: Pytest temporary path fixture
+        """
         # Export schema to a temporary file
         output_file = tmp_path / "schema.csv"
         db_connector.export_schema_csv(output_file, schemas="public")

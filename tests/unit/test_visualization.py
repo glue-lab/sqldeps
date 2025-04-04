@@ -1,11 +1,19 @@
-"""Unit tests for visualization.py."""
+"""Unit tests for visualization.py.
+
+This module tests the visualization functions for creating interactive
+network graphs of SQL dependencies.
+"""
 
 from sqldeps.models import SQLProfile
 from sqldeps.visualization import visualize_sql_dependencies
 
 
-def test_visualize_sql_dependencies_basic():
-    """Test basic visualization of SQL dependencies."""
+def test_visualize_sql_dependencies_basic() -> None:
+    """Test basic visualization of SQL dependencies.
+
+    Verifies that the visualization function creates a valid Plotly figure
+    with the correct title and traces.
+    """
     # Simple mock dependencies data
     sql_profiles = {
         "file1.sql": SQLProfile(
@@ -25,8 +33,11 @@ def test_visualize_sql_dependencies_basic():
     assert "1 files" in figure.layout.title.text
 
 
-def test_visualize_sql_dependencies_empty():
-    """Test visualization with empty dependencies."""
+def test_visualize_sql_dependencies_empty() -> None:
+    """Test visualization with empty dependencies.
+
+    Verifies that the function handles empty input gracefully.
+    """
     # Call with empty dependencies
     figure = visualize_sql_dependencies({})
 

@@ -1,4 +1,8 @@
-"""Unit tests for parallel processing functionality."""
+"""Unit tests for parallel processing functionality.
+
+This module tests the parallel execution of SQL dependency extraction
+across multiple processes.
+"""
 
 from concurrent.futures import Future
 from pathlib import Path
@@ -17,7 +21,7 @@ from sqldeps.parallel import (
 class TestParallelProcessing:
     """Test suite for parallel processing functionality."""
 
-    def test_resolve_workers(self):
+    def test_resolve_workers(self) -> None:
         """Test resolution of worker count."""
         with patch("sqldeps.parallel.cpu_count", return_value=8):
             # Default (-1) should use all CPUs
@@ -37,7 +41,7 @@ class TestParallelProcessing:
             with pytest.raises(ValueError):
                 resolve_workers(0)
 
-    def test_extract_from_file_with_cache(self):
+    def test_extract_from_file_with_cache(self) -> None:
         """Test single file extraction with caching."""
         # Mock dependencies
         mock_limiter = MagicMock()
@@ -55,7 +59,7 @@ class TestParallelProcessing:
             assert result == mock_result
             mock_limiter.wait_if_needed.assert_not_called()
 
-    def test_extract_from_file_without_cache(self):
+    def test_extract_from_file_without_cache(self) -> None:
         """Test single file extraction without cache hit."""
         # Mock dependencies
         mock_limiter = MagicMock()
@@ -80,7 +84,7 @@ class TestParallelProcessing:
             mock_extractor.extract_from_file.assert_called_once_with(mock_path)
             mock_save.assert_called_once()
 
-    def test_process_batch_files(self):
+    def test_process_batch_files(self) -> None:
         """Test batch processing of files."""
         # Mock dependencies
         mock_limiter = MagicMock()
@@ -105,7 +109,7 @@ class TestParallelProcessing:
             assert results[str(mock_files[0])] == path1_result
             assert results[str(mock_files[1])] == path2_result
 
-    def test_process_files_in_parallel(self):
+    def test_process_files_in_parallel(self) -> None:
         """Test parallel file processing."""
         with (
             patch("sqldeps.parallel.ProcessPoolExecutor") as mock_executor_class,

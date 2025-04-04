@@ -1,10 +1,14 @@
-# tests/test_models.py
+"""Unit tests for data models.
+
+This module tests the SQLProfile class and its methods.
+"""
+
 import pandas as pd
 
 from sqldeps.models import SQLProfile
 
 
-def test_sql_profile_initialization():
+def test_sql_profile_initialization() -> None:
     """Test SQLProfile initialization and sorting."""
     # Create a profile with unsorted data
     profile = SQLProfile(
@@ -28,7 +32,7 @@ def test_sql_profile_initialization():
     assert profile.outputs["schema.out_table_b"] == ["out_col_a", "out_col_b"]
 
 
-def test_to_dataframe_conversion():
+def test_to_dataframe_conversion() -> None:
     """Test conversion to DataFrame with proper structure."""
     profile = SQLProfile(
         dependencies={"schema.users": ["id", "name"]},
@@ -56,7 +60,7 @@ def test_to_dataframe_conversion():
     assert set(outs["column"]) == {"user_id", "report_date"}
 
 
-def test_empty_columns_handling():
+def test_empty_columns_handling() -> None:
     """Test handling of tables with no specific columns."""
     profile = SQLProfile(
         dependencies={"table_with_no_columns": []},
@@ -77,7 +81,7 @@ def test_empty_columns_handling():
     assert outs.iloc[0]["column"] is None
 
 
-def test_to_dict():
+def test_to_dict() -> None:
     """Test conversion to dictionary format."""
     profile = SQLProfile(
         dependencies={"users": ["id", "name"]}, outputs={"reports": ["user_id"]}
@@ -92,7 +96,7 @@ def test_to_dict():
     assert result["outputs"] == {"reports": ["user_id"]}
 
 
-def test_property_accessors():
+def test_property_accessors() -> None:
     """Test property accessor methods."""
     profile = SQLProfile(
         dependencies={"schema1.table1": ["col1"], "schema2.table2": ["col2"]},

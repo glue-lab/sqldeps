@@ -1,4 +1,8 @@
-"""Caching utilities for SQL dependency extraction."""
+"""Caching utilities for SQL dependency extraction.
+
+This module provides functions for caching extraction results to avoid
+repeatedly processing the same SQL files, which can save API calls, cost, and time.
+"""
 
 import hashlib
 import json
@@ -12,7 +16,7 @@ CACHE_DIR = ".sqldeps_cache"
 
 
 def get_cache_path(file_path: str | Path, cache_dir: str | Path = CACHE_DIR) -> Path:
-    """Generates a consistent cache file path based on SQL file content.
+    """Generate a consistent cache file path based on SQL file content.
 
     Creates a unique cache filename by hashing the SQL file's content.
     Includes the original filename in the cache name for easier debugging.

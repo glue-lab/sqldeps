@@ -1,9 +1,15 @@
+"""Unit tests for rate limiter.
+
+This module tests the rate limiting functionality which is used to control
+the frequency of API calls to LLM providers.
+"""
+
 from unittest.mock import MagicMock, patch
 
 from sqldeps.rate_limiter import MultiprocessingRateLimiter, RateLimiter
 
 
-def test_rate_limiter_no_wait_under_limit():
+def test_rate_limiter_no_wait_under_limit() -> None:
     """Test rate limiter when under the RPM limit (no waiting needed)."""
     # Create a rate limiter with 60 RPM (1 request per second)
     limiter = RateLimiter(rpm=60)
@@ -18,7 +24,7 @@ def test_rate_limiter_no_wait_under_limit():
         mock_sleep.assert_not_called()
 
 
-def test_rate_limiter_wait_when_limit_reached():
+def test_rate_limiter_wait_when_limit_reached() -> None:
     """Test rate limiter when RPM limit is reached (should wait)."""
     # Create a rate limiter with 10 RPM
     limiter = RateLimiter(rpm=10)
@@ -47,7 +53,7 @@ def test_rate_limiter_wait_when_limit_reached():
         )  # Allow small float differences
 
 
-def test_rate_limiter_zero_rpm():
+def test_rate_limiter_zero_rpm() -> None:
     """Test rate limiter when RPM is set to zero (disabled)."""
     limiter = RateLimiter(rpm=0)
 
@@ -61,7 +67,7 @@ def test_rate_limiter_zero_rpm():
         mock_sleep.assert_not_called()
 
 
-def test_multiprocessing_rate_limiter():
+def test_multiprocessing_rate_limiter() -> None:
     """Test multiprocessing rate limiter."""
     # Create a mock manager
     mock_manager = MagicMock()

@@ -1,3 +1,9 @@
+"""Base classes for LLM parsers.
+
+This module defines the abstract base class for all LLM-based SQL parsers,
+providing a common interface and shared functionality.
+"""
+
 import importlib.resources as pkg_resources
 import json
 from abc import ABC, abstractmethod
@@ -18,7 +24,16 @@ from sqldeps.utils import find_sql_files, merge_profiles, merge_schemas
 
 
 class BaseSQLExtractor(ABC):
-    """Mandatory interface for all parsers."""
+    """Mandatory interface for all parsers.
+
+    Attributes:
+        VALID_EXTENSIONS: Set of valid file extensions to process
+        framework: Name of the LLM framework being used
+        model: Name of the specific model
+        prompt_path: Path to custom prompt file
+        params: Additional parameters for the LLM
+        prompts: Loaded prompt templates
+    """
 
     VALID_EXTENSIONS: ClassVar[set[str]] = {"sql"}
 
@@ -26,19 +41,35 @@ class BaseSQLExtractor(ABC):
     def __init__(
         self, model: str, params: dict | None = None, prompt_path: Path | None = None
     ) -> None:
-        """Initialize with model name and vendor-specific params."""
+        """Initialize with model name and vendor-specific params.
+
+        Args:
+            model: Name of the LLM model to use
+            params: Additional parameters for the LLM API
+            prompt_path: Path to custom prompt YAML file
+        """
         self.framework = self.__class__.__name__.replace("Extractor", "").lower()
         self.model = model
         self.prompt_path = prompt_path
         self.params = params or {}
         self.prompts = self._load_prompts(prompt_path)
 
-        # Set default temperature to 0 in case it's not specified
+        # Set default temperature to 0 in case it's not specified (fails for OpenAI o3)
         if "temperature" not in self.params:
             self.params["temperature"] = 0
 
     def extract_from_query(self, sql: str) -> SQLProfile:
-        """Core extraction method."""
+        """Core extraction method.
+
+        Args:
+            sql: SQL query string to analyze
+
+        Returns:
+            SQLProfile object containing dependencies and outputs
+
+        Raises:
+            ValueError: If response cannot be processed
+        """
         formatted_sql = sqlparse.format(sql, reindent=True, keyword_case="upper")
         prompt = self._generate_prompt(formatted_sql)
         response = self._query_llm(prompt)
@@ -46,7 +77,17 @@ class BaseSQLExtractor(ABC):
         return self._process_response(response)
 
     def extract_from_file(self, file_path: str | Path) -> SQLProfile:
-        """Extract dependencies from a SQL file."""
+        """Extract dependencies from a SQL file.
+
+        Args:
+            file_path: Path to SQL file
+
+        Returns:
+            SQLProfile object containing dependencies and outputs
+
+        Raises:
+            FileNotFoundError: If file does not exist
+        """
         file_path = Path(file_path)
         if not file_path.exists():
             raise FileNotFoundError(f"SQL file not found: {file_path}")
@@ -67,7 +108,24 @@ class BaseSQLExtractor(ABC):
         use_cache: bool = True,
         clear_cache: bool = False,
     ) -> SQLProfile | dict[str, SQLProfile]:
-        """Extract and merge dependencies from all SQL files in a folder."""
+        """Extract and merge dependencies from all SQL files in a folder.
+
+        Args:
+            folder_path: Path to folder containing SQL files
+            recursive: Whether to search recursively
+            merge_sql_profiles: Whether to merge all results into a single SQLProfile
+            valid_extensions: Set of valid file extensions to process
+            n_workers: Number of worker processes for parallel execution
+            rpm: Maximum requests per minute for API rate limiting
+            use_cache: Whether to use cached results
+            clear_cache: Whether to clear the cache after processing
+
+        Returns:
+            SQLProfile object or dictionary mapping file paths to SQLProfile objects
+
+        Raises:
+            ValueError: If no dependencies could be extracted
+        """
         # Find all SQL files
         sql_files = find_sql_files(folder_path, recursive, valid_extensions)
 
@@ -109,6 +167,9 @@ class BaseSQLExtractor(ABC):
 
         Returns:
             Dictionary mapping file paths to their respective SQLProfile objects
+
+        Raises:
+            ValueError: If no dependencies could be extracted
         """
         # Create rate limiter
         rate_limiter = RateLimiter(rpm)
@@ -160,7 +221,17 @@ class BaseSQLExtractor(ABC):
         rpm: int = 100,
         use_cache: bool = True,
     ) -> dict[str, SQLProfile]:
-        """Process a list of SQL files in parallel with rate limiting."""
+        """Process a list of SQL files in parallel with rate limiting.
+
+        Args:
+            sql_files: List of SQL file paths to process
+            n_workers: Number of worker processes
+            rpm: Requests per minute limit
+            use_cache: Whether to use cached results
+
+        Returns:
+            Dictionary mapping file paths to their respective SQLProfile objects
+        """
         from sqldeps.parallel import process_files_in_parallel
 
         return process_files_in_parallel(
@@ -182,10 +253,10 @@ class BaseSQLExtractor(ABC):
         """Match extracted dependencies against actual database schema.
 
         Args:
-            dependencies: SQLDependency object containing tables and columns to match
+            dependencies:SQLDependency object containing tables and columns to match
             db_connection: Database connector instance to use for schema validation
             target_schemas: Optional list of database schemas to validate against
-            (default: ['public'])
+                (default: ["public"])
 
         Returns:
             pd.DataFrame: Merged schema DataFrame with validation information
@@ -201,7 +272,17 @@ class BaseSQLExtractor(ABC):
         return merge_schemas(extracted_schema, db_schema)
 
     def _load_prompts(self, path: Path | None = None) -> dict:
-        """Load prompts from a YAML file."""
+        """Load prompts from a YAML file.
+
+        Args:
+            path: Path to prompt YAML file
+
+        Returns:
+            Dictionary with loaded prompts
+
+        Raises:
+            ValueError: If required keys are missing from prompt file
+        """
         if path is None:
             with (
                 pkg_resources.files("sqldeps.configs.prompts")
@@ -222,15 +303,39 @@ class BaseSQLExtractor(ABC):
         return prompts
 
     def _generate_prompt(self, sql: str) -> str:
-        """Generate the prompt for the LLM."""
+        """Generate the prompt for the LLM.
+
+        Args:
+            sql: SQL query to analyze
+
+        Returns:
+            Formatted prompt string
+        """
         return self.prompts["user_prompt"].format(sql=sql)
 
     @abstractmethod
     def _query_llm(self, prompt: str) -> str:
-        """Query the LLM with the generated prompt to generate a response."""
+        """Query the LLM with the generated prompt to generate a response.
+
+        Args:
+            prompt: Prompt to send to the LLM
+
+        Returns:
+            Response from the LLM
+        """
 
     def _process_response(self, response: str) -> SQLProfile:
-        """Process the LLM response into a SQLProfile object."""
+        """Process the LLM response into a SQLProfile object.
+
+        Args:
+            response: Response from the LLM
+
+        Returns:
+            SQLProfile object with dependencies and outputs
+
+        Raises:
+            ValueError: If JSON cannot be decoded or required keys are missing
+        """
         try:
             # Convert result into a dictionary
             result = json.loads(response)
@@ -250,7 +355,14 @@ class BaseSQLExtractor(ABC):
 
     @staticmethod
     def _normalize_extensions(extensions: set[str] | None) -> set[str]:
-        """Normalize extensions by ensuring they are lowercase without leading dots."""
+        """Normalize extensions by ensuring they are lowercase without leading dots.
+
+        Args:
+            extensions: Set of file extensions
+
+        Returns:
+            Normalized set of file extensions
+        """
         if extensions:
             return {ext.lstrip(".").lower() for ext in extensions}
         return BaseSQLExtractor.VALID_EXTENSIONS

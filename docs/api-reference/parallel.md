@@ -1,0 +1,3 @@
+# Parallelization Reference
+
+::: sqldeps.parallel

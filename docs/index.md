@@ -48,7 +48,20 @@ All models availables on [Groq](https://console.groq.com/docs/models), [OpenAI](
 pip install sqldeps
 
 # Basic usage
-sqldeps path/to/query.sql
+sqldeps extract path/to/query.sql
 ```
 
 Check out the [Quick Start](getting-started/quick-start.md) guide for more details.
+
+<!-- ## Try the Web App
+
+SQLDeps includes a Streamlit-based web interface for interactive dependency extraction:
+
+```bash
+# Run the web app
+sqldeps app
+```
+
+## Simulate SQLDeps Savings
+
+Interested in evaluating how SQLDeps could benefit your team? Check out our [Time & Cost Simulator](https://sqldeps-simulator.streamlit.app/) to visualize time savings, cost benefits, and return on investment. -->

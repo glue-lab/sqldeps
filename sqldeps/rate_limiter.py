@@ -1,7 +1,12 @@
-"""Rate limiting utilities for API calls."""
+"""Rate limiting utilities for API calls.
+
+This module provides classes for limiting the rate of API calls to stay
+within provider limits, in both single-process and multi-process contexts.
+"""
 
 import time
 from collections import deque
+from multiprocessing.managers import SyncManager
 
 from loguru import logger
 
@@ -18,7 +23,7 @@ class RateLimiter:
         window: Time window in seconds (default: 60 seconds = 1 minute)
     """
 
-    def __init__(self, rpm: int):
+    def __init__(self, rpm: int) -> None:
         """Initialize the rate limiter with an RPM limit.
 
         Args:
@@ -26,9 +31,9 @@ class RateLimiter:
         """
         self.rpm = rpm
         self.call_times = deque()
-        self.window = 60  # 1 minute window
+        self.window = 60  # 60 seconds =  1 minute window
 
-    def wait_if_needed(self):
+    def wait_if_needed(self) -> None:
         """Ensures that calls do not exceed the rate limit.
 
         If the limit is reached, it waits until a slot is available.
@@ -73,7 +78,7 @@ class MultiprocessingRateLimiter:
         window: Time window in seconds
     """
 
-    def __init__(self, manager, rpm: int):
+    def __init__(self, manager: SyncManager, rpm: int) -> None:
         """Initialize with a multiprocessing manager and RPM limit.
 
         Args:
@@ -85,7 +90,7 @@ class MultiprocessingRateLimiter:
         self.rpm = rpm
         self.window = 60
 
-    def wait_if_needed(self):
+    def wait_if_needed(self) -> None:
         """Ensures calls don't exceed the rate limit across processes."""
         if self.rpm <= 0:
             return

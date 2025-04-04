@@ -78,6 +78,7 @@ dev = [
 docs = [
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.6.9",
+    "mkdocstrings[python]>=0.29.1",
     "pymdown-extensions>=10.14.3",
 ]
 analysis = [
@@ -103,13 +104,13 @@ select = [
     "N",  # pep8-naming
     "Q",  # flake8-quotes
     "UP", # pyupgrade
-    # "D",  # pydocstyle
+    "D",  # pydocstyle
     "RUF",  # Ruff-specific rules
     "B",    # flake8-bugbear
-    # "T20",  # print found
+    "T20",  # print found
     "C90",  # mccabe (complex structures)
     "SIM",  # flake8-simplify
-    # "ANN",  # flake8-annotations
+    "ANN",  # flake8-annotations
     "TID",  # flake8-tidy-imports
 ]
 ignore = ["B008","B904"]

@@ -1,3 +1,9 @@
+"""LLM-based SQL parsers for dependency extraction.
+
+This package provides integrations with various LLM providers for extracting
+SQL dependencies, with a common interface and factory function.
+"""
+
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,6 +28,20 @@ def create_extractor(
     params: dict | None = None,
     prompt_path: Path | None = None,
 ) -> BaseSQLExtractor:
+    """Create an appropriate SQL extractor based on the specified framework.
+
+    Args:
+        framework: The LLM framework to use ("groq", "openai", or "deepseek")
+        model: The model name within the selected framework (uses default if None)
+        params: Additional parameters to pass to the LLM API
+        prompt_path: Path to a custom prompt YAML file
+
+    Returns:
+        An instance of the appropriate SQL extractor
+
+    Raises:
+        ValueError: If an unsupported framework is specified
+    """
     framework = framework.lower()
     if framework not in DEFAULTS:
         raise ValueError(

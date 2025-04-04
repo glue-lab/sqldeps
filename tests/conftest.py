@@ -1,12 +1,14 @@
-"""Test configuration and fixtures for all tests."""
+"""Test configuration and fixtures for all tests.
+
+This module provides pytest configuration, custom command-line options,
+and fixtures shared across test modules.
+"""
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
-from sqldeps.llm_parsers import create_extractor
-from sqldeps.models import SQLProfile
+from sqldeps.llm_parsers import BaseSQLExtractor, create_extractor
 
 # Base paths
 TEST_DATA_DIR = Path(__file__).parent / "data"
@@ -14,8 +16,12 @@ SQL_DIR = TEST_DATA_DIR / "sql"
 EXPECTED_OUTPUT_DIR = TEST_DATA_DIR / "expected_outputs"
 
 
-def pytest_addoption(parser):
-    """Register custom pytest command-line options."""
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Register custom pytest command-line options.
+
+    Args:
+        parser: Pytest command-line parser
+    """
     parser.addoption(
         "--framework",
         action="store",
@@ -36,8 +42,12 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
-    """Register custom markers."""
+def pytest_configure(config: pytest.Config) -> None:
+    """Register custom markers.
+
+    Args:
+        config: Pytest configuration object
+    """
     config.addinivalue_line(
         "markers",
         "llm: mark tests that require LLM API calls (typically skipped in CI/CD)",
@@ -49,20 +59,17 @@ def pytest_configure(config):
 
 
 @pytest.fixture
-def extractor(request):
-    """Create an extractor based on command-line options."""
+def extractor(request: pytest.FixtureRequest) -> BaseSQLExtractor:
+    """Create an extractor based on command-line options.
+
+    Args:
+        request: Pytest request object
+
+    Returns:
+        A configured SQLDeps extractor
+    """
     framework = request.config.getoption("--framework")
     model = request.config.getoption("--model")
     prompt = request.config.getoption("--prompt")
 
     return create_extractor(framework, model, prompt_path=prompt)
-
-
-@pytest.fixture
-def mock_extractor():
-    """Create a mocked extractor for tests."""
-    mock = MagicMock()
-    mock.extract_from_query.return_value = SQLProfile(
-        dependencies={"test_table": ["column1"]}, outputs={"output_table": ["column2"]}
-    )
-    return mock

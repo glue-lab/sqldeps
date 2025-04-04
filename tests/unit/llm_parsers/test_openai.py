@@ -1,4 +1,7 @@
-"""Unit tests for OpenaiExtractor."""
+"""Unit tests for OpenaiExtractor.
+
+This module tests the OpenAI-specific LLM implementation.
+"""
 
 from unittest.mock import MagicMock, patch
 
@@ -10,7 +13,7 @@ from sqldeps.llm_parsers.openai import OpenaiExtractor
 class TestOpenaiExtractor:
     """Test suite for OpenaiExtractor."""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test proper initialization with API key."""
         with patch.dict("os.environ", {"OPENAI_API_KEY": "fake-key"}):
             extractor = OpenaiExtractor(model="gpt-4o")
@@ -19,7 +22,7 @@ class TestOpenaiExtractor:
             assert extractor.framework == "openai"
             assert hasattr(extractor, "client")
 
-    def test_initialization_without_api_key(self):
+    def test_initialization_without_api_key(self) -> None:
         """Test initialization fails without API key."""
         with (
             patch.dict("os.environ", clear=True),
@@ -27,7 +30,7 @@ class TestOpenaiExtractor:
         ):
             OpenaiExtractor(model="gpt-4o")
 
-    def test_query_llm(self):
+    def test_query_llm(self) -> None:
         """Test LLM query functionality."""
         with patch.dict("os.environ", {"OPENAI_API_KEY": "fake-key"}):
             extractor = OpenaiExtractor(model="gpt-4o")

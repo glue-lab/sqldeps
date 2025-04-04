@@ -1,3 +1,9 @@
+"""Web application for interactive SQLDeps analysis.
+
+This module provides a Streamlit-based web interface for extracting
+and visualizing SQL dependencies.
+"""
+
 import json
 import os
 import tempfile
@@ -8,24 +14,34 @@ import sqlparse
 import streamlit as st
 
 from sqldeps.database import PostgreSQLConnector
-
-# Import the necessary components from sqldeps
 from sqldeps.llm_parsers import create_extractor
 
-# Get the logo path
+# Logo paths
 ASSETS_DIR = Path(__file__).parent / "assets" / "images"
 LOGO_GRAY_PATH = ASSETS_DIR / "sqldeps_gray.png"
 LOGO_WHITE_PATH = ASSETS_DIR / "sqldeps_white.png"
 
-# Update the app configuration
+# App configuration
 st.set_page_config(
     page_title="SQL Dependency Extractor",
-    page_icon=str(LOGO_WHITE_PATH),  # Use the logo as the page icon
+    page_icon=str(LOGO_WHITE_PATH),
     layout="wide",
 )
 
 
 def main() -> None:  # noqa: C901
+    """Main function for the SQLDeps web application.
+
+    This function:
+    1. Sets up the Streamlit interface with sidebar options
+    2. Handles file uploads or direct SQL input
+    3. Processes SQL to extract dependencies
+    4. Optionally validates against a database
+    5. Displays results in an organized, interactive format
+
+    Returns:
+        None
+    """
     st.title("SQL Dependency Extractor")
     st.sidebar.image(str(LOGO_GRAY_PATH))
     st.sidebar.header("Configuration")
