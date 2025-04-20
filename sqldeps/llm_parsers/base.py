@@ -351,7 +351,7 @@ class BaseSQLExtractor(ABC):
             )
 
         except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to decode JSON: {e}\nResponse: {response}")
+            raise ValueError(f"Failed to decode JSON: {e}\nResponse: {response}") from e
 
     @staticmethod
     def _normalize_extensions(extensions: set[str] | None) -> set[str]:

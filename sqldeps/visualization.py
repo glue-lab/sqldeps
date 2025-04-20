@@ -180,7 +180,7 @@ def visualize_sql_dependencies(  # noqa: C901
         if node_type == "file":
             # File nodes
             full_path = G.nodes[node].get("full_path", node)
-            connected_tables = [n for n in G.neighbors(node)]
+            connected_tables = list(G.neighbors(node))
             hover_text = f"<b>File:</b> {full_path}<br>"
             hover_text += f"<b>Tables Used:</b> {len(connected_tables)}<br>"
             hover_text += "<br>".join(f"- {table}" for table in connected_tables)
@@ -190,7 +190,7 @@ def visualize_sql_dependencies(  # noqa: C901
             table_count = len(connected_tables)
             max_tables = max(
                 [
-                    len([n for n in G.neighbors(node)])
+                    len([list(G.neighbors(node))])
                     for node in G.nodes()
                     if G.nodes[node].get("type") == "file"
                 ],
@@ -281,7 +281,7 @@ def visualize_sql_dependencies(  # noqa: C901
     edge_trace = go.Scatter(
         x=edge_x,
         y=edge_y,
-        line=dict(width=1, color="rgba(150, 150, 150, 0.5)"),
+        line={"width": 1, "color": "rgba(150, 150, 150, 0.5)"},
         hoverinfo="none",
         mode="lines",
         showlegend=False,
@@ -307,15 +307,15 @@ def visualize_sql_dependencies(  # noqa: C901
             textposition="top center",
             hovertext=[data["hover_text"] for data in file_nodes.values()],
             hoverinfo="text",
-            marker=dict(
-                symbol=file_symbol,
-                size=[data["size"] for data in file_nodes.values()],
-                color=[data["color"] for data in file_nodes.values()]
+            marker={
+                "symbol": file_symbol,
+                "size": [data["size"] for data in file_nodes.values()],
+                "color": [data["color"] for data in file_nodes.values()]
                 if color_gradient
                 else "rgba(31, 119, 180, 0.8)",
-                line=dict(width=1, color="rgba(31, 119, 180, 1)"),
-            ),
-            textfont=dict(size=text_font_size),
+                "line": {"width": 1, "color": "rgba(31, 119, 180, 1)"},
+            },
+            textfont={"size": text_font_size},
         )
         traces.append(file_trace)
 
@@ -333,15 +333,15 @@ def visualize_sql_dependencies(  # noqa: C901
             textposition="top center",
             hovertext=[data["hover_text"] for data in regular_table_nodes.values()],
             hoverinfo="text",
-            marker=dict(
-                symbol=table_symbol,
-                size=[data["size"] for data in regular_table_nodes.values()],
-                color=[data["color"] for data in regular_table_nodes.values()]
+            marker={
+                "symbol": table_symbol,
+                "size": [data["size"] for data in regular_table_nodes.values()],
+                "color": [data["color"] for data in regular_table_nodes.values()]
                 if color_gradient
                 else "rgba(255, 127, 14, 0.8)",
-                line=dict(width=1, color="rgba(255, 127, 14, 1)"),
-            ),
-            textfont=dict(size=text_font_size),
+                "line": {"width": 1, "color": "rgba(255, 127, 14, 1)"},
+            },
+            textfont={"size": text_font_size},
         )
         traces.append(regular_table_trace)
 
@@ -356,15 +356,15 @@ def visualize_sql_dependencies(  # noqa: C901
             textposition="top center",
             hovertext=[data["hover_text"] for data in common_table_nodes.values()],
             hoverinfo="text",
-            marker=dict(
-                symbol=table_symbol,
-                size=[data["size"] for data in common_table_nodes.values()],
-                color=[data["color"] for data in common_table_nodes.values()]
+            marker={
+                "symbol": table_symbol,
+                "size": [data["size"] for data in common_table_nodes.values()],
+                "color": [data["color"] for data in common_table_nodes.values()]
                 if color_gradient
                 else "rgba(214, 39, 40, 0.8)",
-                line=dict(width=2, color="rgba(214, 39, 40, 1)"),
-            ),
-            textfont=dict(size=text_font_size),
+                "line": {"width": 2, "color": "rgba(214, 39, 40, 1)"},
+            },
+            textfont={"size": text_font_size},
         )
         traces.append(common_table_trace)
 
@@ -376,12 +376,12 @@ def visualize_sql_dependencies(  # noqa: C901
 
     # Add text toggle buttons if requested
     if show_text_buttons:
-        text_buttons = dict(
-            type="buttons",
-            direction="right",
-            buttons=[
-                dict(
-                    args=[
+        text_buttons = {
+            "type": "buttons",
+            "direction": "right",
+            "buttons": [
+                {
+                    "args": [
                         {
                             "mode": [
                                 "lines",
@@ -393,50 +393,50 @@ def visualize_sql_dependencies(  # noqa: C901
                             else ["lines", "markers+text", "markers+text"]
                         }
                     ],
-                    label="Show All Text",
-                    method="restyle",
-                ),
-                dict(
-                    args=[
+                    "label": "Show All Text",
+                    "method": "restyle",
+                },
+                {
+                    "args": [
                         {
                             "mode": ["lines", "markers", "markers", "markers"]
                             if len(traces) == 4
                             else ["lines", "markers", "markers"]
                         }
                     ],
-                    label="Hide All Text",
-                    method="restyle",
-                ),
-                dict(
-                    args=[
+                    "label": "Hide All Text",
+                    "method": "restyle",
+                },
+                {
+                    "args": [
                         {
                             "mode": ["lines", "markers+text", "markers", "markers"]
                             if len(traces) == 4
                             else ["lines", "markers+text", "markers"]
                         }
                     ],
-                    label="Files Text Only",
-                    method="restyle",
-                ),
-                dict(
-                    args=[
+                    "label": "Files Text Only",
+                    "method": "restyle",
+                },
+                {
+                    "args": [
                         {
                             "mode": ["lines", "markers", "markers+text", "markers+text"]
                             if len(traces) == 4
                             else ["lines", "markers", "markers+text"]
                         }
                     ],
-                    label="Tables Text Only",
-                    method="restyle",
-                ),
+                    "label": "Tables Text Only",
+                    "method": "restyle",
+                },
             ],
-            pad={"r": 10, "t": 10},
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.15,
-            yanchor="top",
-        )
+            "pad": {"r": 10, "t": 10},
+            "showactive": True,
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 1.15,
+            "yanchor": "top",
+        }
         updatemenus.append(text_buttons)
 
     # Add layout change buttons if requested
@@ -502,21 +502,25 @@ def visualize_sql_dependencies(  # noqa: C901
                 ]
 
             # Create button
-            button = dict(args=args, label=layout_name.capitalize(), method="update")
+            button = {
+                "args": args,
+                "label": layout_name.capitalize(),
+                "method": "update",
+            }
             layout_buttons.append(button)
 
         # Add layout button menu
-        layout_menu = dict(
-            type="buttons",
-            direction="right",
-            buttons=layout_buttons,
-            pad={"r": 10, "t": 10},
-            showactive=True,
-            x=0.5,
-            xanchor="center",
-            y=1.08 if show_text_buttons else 1.15,
-            yanchor="top",
-        )
+        layout_menu = {
+            "type": "buttons",
+            "direction": "right",
+            "buttons": layout_buttons,
+            "pad": {"r": 10, "t": 10},
+            "showactive": True,
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 1.08 if show_text_buttons else 1.15,
+            "yanchor": "top",
+        }
         updatemenus.append(layout_menu)
 
     # Set top margin based on buttons
@@ -532,26 +536,30 @@ def visualize_sql_dependencies(  # noqa: C901
             f"SQL Dependency Graph ({len(sql_profiles)} files, "
             f"{len(table_usage)} tables)"
         ),
-        title_font=dict(size=16),
+        title_font={"size": 16},
         showlegend=True,
-        legend=dict(
-            yanchor="top", y=0.99, xanchor="left", x=0.01, itemsizing="constant"
-        ),
+        legend={
+            "yanchor": "top",
+            "y": 0.99,
+            "xanchor": "left",
+            "x": 0.01,
+            "itemsizing": "constant",
+        },
         updatemenus=updatemenus if updatemenus else None,
         hovermode="closest",
-        margin=dict(b=20, l=5, r=5, t=top_margin),
+        margin={"b": 20, "l": 5, "r": 5, "t": top_margin},
         annotations=[
-            dict(
-                showarrow=False,
-                text="Size indicates usage frequency",
-                xref="paper",
-                yref="paper",
-                x=0.01,
-                y=0.01,
-            )
+            {
+                "showarrow": False,
+                "text": "Size indicates usage frequency",
+                "xref": "paper",
+                "yref": "paper",
+                "x": 0.01,
+                "y": 0.01,
+            }
         ],
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        xaxis={"showgrid": False, "zeroline": False, "showticklabels": False},
+        yaxis={"showgrid": False, "zeroline": False, "showticklabels": False},
         plot_bgcolor="rgba(248, 248, 248, 1)",
         paper_bgcolor="rgba(248, 248, 248, 1)",
     )

@@ -347,7 +347,7 @@ def extract(
 
     except Exception as e:
         logger.error(f"Error extracting dependencies: {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 # App subcommand
@@ -368,7 +368,7 @@ def app_main() -> None:
         subprocess.run([sys.executable, "-m", "streamlit", "run", str(app_module_path)])
     except Exception as e:
         logger.error(f"Failed to start web application: {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 # Cache subcommands
@@ -385,7 +385,7 @@ def cache_clear() -> None:
             raise typer.Exit(code=1)
     except Exception as e:
         logger.error(f"Error clearing cache: {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 if __name__ == "__main__":

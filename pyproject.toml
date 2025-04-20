@@ -91,29 +91,28 @@ analysis = [
 default-groups = ["dev", "docs", "analysis"]
 
 [tool.ruff]
-# Same as Black.
-line-length = 88
-indent-width = 4
+line-length = 88   # Like Black, use 88 characters per line.
+indent-width = 4   # Like Black, use 4 spaces per indentation level.
 exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 select = [
-    "F", # Pyflakes
+    "F",      # Pyflakes
     "E", "W", # pycodestyle
-    "I",  # isort
-    "N",  # pep8-naming
-    "Q",  # flake8-quotes
-    "UP", # pyupgrade
-    "D",  # pydocstyle
-    "RUF",  # Ruff-specific rules
-    "B",    # flake8-bugbear
-    "T20",  # print found
-    "C90",  # mccabe (complex structures)
-    "SIM",  # flake8-simplify
-    "ANN",  # flake8-annotations
-    "TID",  # flake8-tidy-imports
+    "I",      # isort
+    "N",      # pep8-naming
+    "Q",      # flake8-quotes
+    "UP",     # pyupgrade
+    "D",      # pydocstyle
+    "RUF",    # Ruff-specific rules
+    "B",      # flake8-bugbear
+    "T20",    # flake8-print
+    "C90",    # mccabe (complex structures)
+    "SIM",    # flake8-simplify
+    "ANN",    # flake8-annotations
+    "TID",    # flake8-tidy-imports
 ]
-ignore = ["B008","B904"]
+ignore = [] # ignore specific rules here
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
