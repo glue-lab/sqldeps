@@ -93,7 +93,7 @@ default-groups = ["dev", "docs", "analysis"]
 [tool.ruff]
 line-length = 88   # Like Black, use 88 characters per line.
 indent-width = 4   # Like Black, use 4 spaces per indentation level.
-exclude = ["*.ipynb"]
+exclude = ["*.ipynb"] # Exclude Jupyter notebooks from linting.
 
 [tool.ruff.lint]
 select = [
