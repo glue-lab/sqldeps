@@ -17,7 +17,7 @@ system_prompt: |
   1. CREATE TABLE Operations:
      - New tables appear ONLY in OUTPUTS, not in dependencies.
      - For CREATE TABLE AS SELECT:
-       - If using SELECT *: Use ["*"] in outputs
+       - If using SELECT * with no WHERE/condition clauses: Use ["*"] in outputs
          → Example: `CREATE TABLE new_table AS SELECT * FROM source_table`
          → Dependencies: `{"source_table": ["*"]}`
          → Outputs: `{"new_table": ["*"]}`
@@ -39,6 +39,10 @@ system_prompt: |
        → Example: `INSERT INTO table_x SELECT * FROM table_y`
        → Dependencies: `{"table_x": ["*"], "table_y": ["*"]}`
        → Outputs: `{"table_x": ["*"]}`
+     - INSERT with column list from SELECT *:
+       → Example: `INSERT INTO table_x (col1, col2) SELECT * FROM table_y`
+       → Dependencies: `{"table_x": ["col1", "col2"], "table_y": ["*"]}`
+       → Outputs: `{"table_x": ["col1", "col2"]}`
 
   3. UPDATE/DELETE Operations:
      - Table appears in BOTH dependencies and outputs.
@@ -51,30 +55,61 @@ system_prompt: |
        → Example: `TRUNCATE TABLE table_x`
        → Dependencies: `{"table_x": []}`
        → Outputs: `{"table_x": []}`
-     - TRUNCATE followed by INSERT: Table has EMPTY array in dependencies, but SPECIFIED columns in outputs.
+     - TRUNCATE followed by INSERT: Always include the target columns from the INSERT operation in both dependencies and outputs.
        → Example:
          ```sql
          TRUNCATE TABLE table_x;
          INSERT INTO table_x (col1, col2) VALUES (1, 2);
          ```
-       → Dependencies: `{"table_x": []}`
+       → Dependencies: `{"table_x": ["col1", "col2"]}`
        → Outputs: `{"table_x": ["col1", "col2"]}`
+     - TRUNCATE followed by INSERT with explicit columns in functions or procedures:
+       → Example:
+         ```sql
+         CREATE OR REPLACE FUNCTION reset_and_fill()
+         RETURNS void AS $$
+         BEGIN
+           TRUNCATE TABLE target_table;
+           INSERT INTO target_table (col1, col2, col3)
+           SELECT a.x, b.y, c.z FROM table_a a JOIN table_b b ON a.id = b.id JOIN table_c c ON b.id = c.id;
+         END;
+         $$ LANGUAGE plpgsql;
+         ```
+       → Dependencies: `{"target_table": ["col1", "col2", "col3"], "table_a": ["x", "id"], "table_b": ["y", "id"], "table_c": ["z", "id"]}`
+       → Outputs: `{"target_table": ["col1", "col2", "col3"]}`
+     - IMPORTANT: This applies to all contexts (functions, procedures, transactions) - when a table is TRUNCATEd and then has data INSERTed, always include the columns from the INSERT in both dependencies and outputs.
 
   5. DROP TABLE Operations:
-     - Table appears ONLY in dependencies with empty columns, never in outputs.
-     - This applies to both standard DROP and DROP IF EXISTS.
-     - IMPORTANT: Even if the table is dropped and recreated in the same query, it must still appear in dependencies.
-     - Examples:
-       → `DROP TABLE old_logs` or `DROP TABLE IF EXISTS temp_table`
-         → Dependencies: `{"old_logs": []}` or `{"temp_table": []}`
+     - Standard DROP TABLE: The table appears ONLY in dependencies with an empty list, as the table must exist for the script to run without error.
+       → Example: `DROP TABLE old_logs`
+         → Dependencies: `{"old_logs": []}`
          → Outputs: `{}` (table does not appear in outputs)
-       → Combined DROP and CREATE:
+     - DROP TABLE IF EXISTS: The table does NOT appear in dependencies, as the script runs without error even if the table does not exist.
+       → Example: `DROP TABLE IF EXISTS temp_table`
+         → Dependencies: `{}`
+         → Outputs: `{}` (table does not appear in outputs)
+     - Combined DROP and CREATE:
+       → Example:
          ```sql
          DROP TABLE IF EXISTS new_table;
          CREATE TABLE new_table AS SELECT col1, col2 FROM source_table;
          ```
-         → Dependencies: `{"new_table": [], "source_table": ["col1", "col2"]}`
+         → Dependencies: `{"source_table": ["col1", "col2"]}`
          → Outputs: `{"new_table": ["col1", "col2"]}`
+
+  6. VIEW Operations:
+     - CREATE VIEW: Views follow similar patterns to tables
+       → Example: `CREATE VIEW customer_view AS SELECT id, name FROM customers`
+       → Dependencies: `{"customers": ["id", "name"]}`
+       → Outputs: `{"customer_view": ["id", "name"]}`
+     - DROP VIEW: Similar to DROP TABLE
+       → Example: `DROP VIEW old_view`
+       → Dependencies: `{"old_view": []}`
+       → Outputs: `{}`
+     - ALTER VIEW: Both dependencies and outputs
+       → Example: `ALTER VIEW customer_view AS SELECT id, name, email FROM customers`
+       → Dependencies: `{"customer_view": [], "customers": ["id", "name", "email"]}`
+       → Outputs: `{"customer_view": ["id", "name", "email"]}`
 
   CONTEXT-SPECIFIC HANDLING:
 
@@ -108,8 +143,6 @@ system_prompt: |
   4. FUNCTIONS & STORED PROCEDURES:
      - Analyze SQL statements inside functions/procedures and return dependencies and outputs.
      - Function parameters and variables are NOT included as dependencies.
-     - Temporary tables created and used only within the function are NOT included.
-     - Tables referenced in functions appear in BOTH dependencies and outputs.
      - Examples:
        → Basic function:
          ```sql
@@ -121,7 +154,7 @@ system_prompt: |
          END;
          $$ LANGUAGE plpgsql;
          ```
-         → Dependencies: `{"statistics": [], "raw_data": ["*"]}`
+         → Dependencies: `{"statistics": ["*"], "raw_data": ["*"]}`
          → Outputs: `{"statistics": ["*"]}`
        → Function with table creation:
          ```sql
@@ -133,7 +166,7 @@ system_prompt: |
          END;
          $$ LANGUAGE plpgsql;
          ```
-         → Dependencies: `{"reports.daily": [], "source": ["*"]}`
+         → Dependencies: `{"source": ["*"]}`
          → Outputs: `{"reports.daily": ["*"]}`
        → Function with INSERT:
          ```sql
@@ -161,11 +194,17 @@ system_prompt: |
        → Outputs: `{"new_version": ["*"]}`
 
   COLUMN HANDLING:
+  - GENERAL PRINCIPLE: Use ["*"] only when no specific columns are mentioned or when a wildcard is used. Otherwise, list specific columns.
+  
   - For SELECT statements:
-    - `SELECT *` → Use ["*"] in dependencies/outputs
+    - `SELECT *` → Use ["*"]
     - `SELECT column1, column2` → Include only the named columns
-    - `SELECT COUNT(*)` → Use ["*"] in dependencies/outputs
-    - `SELECT COUNT(*), column1` → Only include named columns (e.g., ["column1"])
+    - `SELECT COUNT(*) FROM table` (no WHERE/GROUP BY) → Use ["*"] in dependencies
+    - `SELECT COUNT(*) FROM table WHERE column1 = value` → Only include specific columns in conditions: ["column1"]
+    - `SELECT COUNT(*), column1 FROM table GROUP BY column1` → Only include named columns: ["column1"]
+    
+  - For aggregate functions:
+    - Only include columns explicitly referenced in the query, not "*" unless specifically using SELECT *
     - Examples:
       → `SELECT COUNT(*) FROM orders` → Dependencies: `{"orders": ["*"]}`
       → `SELECT user_id, COUNT(*) FROM orders GROUP BY user_id` → Dependencies: `{"orders": ["user_id"]}`
