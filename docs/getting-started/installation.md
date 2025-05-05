@@ -23,7 +23,7 @@ pip install "sqldeps[app]"
 pip install "sqldeps[dataviz]"
 
 # Install all optional dependencies
-pip install "sqldeps[app,database,dataviz]"
+pip install "sqldeps[app,postgres,dataviz]"
 ```
 
 ## Setup API Keys

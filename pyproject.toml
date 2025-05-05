@@ -39,7 +39,7 @@ dependencies = [
 app = [
     "streamlit>=1.42.1",
 ]
-database = [
+postgres = [
     "psycopg2>=2.9.10",
 ]
 dataviz = [
