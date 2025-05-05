@@ -39,6 +39,9 @@ dependencies = [
 app = [
     "streamlit>=1.42.1",
 ]
+database = [
+    "psycopg2>=2.9.10",
+]
 dataviz = [
     "nbformat>=5.10.4",
     "networkx>=3.4.2",
@@ -60,8 +63,9 @@ pythonpath = "."
 testpaths = ["tests"]
 markers = [
     "llm: marks tests that require LLM API calls (skipped by default)",
+    "slow: marks tests that are slow to execute",
 ]
-addopts = "-m 'not llm and not integration' --ignore=sqldeps/app"
+addopts = "-m 'not llm and not integration and not slow' --ignore=sqldeps/app"
 
 [tool.hatch.metadata]
 allow-direct-references = false
