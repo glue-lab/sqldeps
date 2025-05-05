@@ -2,7 +2,7 @@
     "dependencies": {
         "build_public.Property_Shape": ["PropertyId", "ShapeId"],
         "build_spatial.Shape_Defor": ["ShapeId", "Year", "areaha"],
-        "web_import.Api_Property_Defor": ["Ha", "PropertyId", "Year"]
+        "web_import.Api_Property_Defor": []
     },
     "outputs": {
       "web_import.Api_Property_Defor": ["Ha", "PropertyId", "Year"]

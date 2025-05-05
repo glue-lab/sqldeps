@@ -2,6 +2,7 @@
     "dependencies": {
         "orders": ["user_id"],
         "pgi_shape_clusters": ["PropertyGroupId", "ShapeCluster", "ShapeGroupId"],
+        "pgi_shape_geom_clusters": [],
         "spatial.Shape": ["ShapeId", "geom"],
         "users": ["id", "name"]
     },
