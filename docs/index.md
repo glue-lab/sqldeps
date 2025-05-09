@@ -39,7 +39,7 @@ SQLDeps leverages the power of Large Language Models to provide intelligent, acc
 
 ## Supported LLM Providers
 
-All models availables on [Groq](https://console.groq.com/docs/models), [OpenAI](https://platform.openai.com/docs/models), and [DeepSeek](https://api-docs.deepseek.com/).
+All models availables on [LiteLLM](https://docs.litellm.ai/docs/providers) [Groq](https://console.groq.com/docs/models), [OpenAI](https://platform.openai.com/docs/models), and [DeepSeek](https://api-docs.deepseek.com/).
 
 ## Getting Started
 

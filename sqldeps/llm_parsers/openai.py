@@ -7,7 +7,7 @@ for using OpenAI's models to extract SQL dependencies.
 import os
 from pathlib import Path
 
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from sqldeps.llm_parsers.base import BaseSQLExtractor
 
@@ -61,14 +61,26 @@ class OpenaiExtractor(BaseSQLExtractor):
         Returns:
             Response content from OpenAI
         """
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": self.prompts["system_prompt"]},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
-            **self.params,
-        )
+        messages = [
+            {"role": "system", "content": self.prompts["system_prompt"]},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                **self.params,
+            )
+        except BadRequestError as e:
+            if any(param in str(e) for param in ["temperature", "unsupported"]):
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    response_format={"type": "json_object"},
+                )
+            else:
+                raise
 
         return response.choices[0].message.content

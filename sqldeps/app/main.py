@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 import sqlparse
 import streamlit as st
+from sqlalchemy import text
 
 from sqldeps.database import PostgreSQLConnector
 from sqldeps.llm_parsers import create_extractor
@@ -50,20 +51,20 @@ def main() -> None:  # noqa: C901
     framework = st.sidebar.selectbox(
         "Select Framework",
         options=["groq", "openai", "deepseek"],
-        index=0,
+        index=1,
     )
 
     # Model selection based on framework
     model_options = {
         "groq": [
             "llama-3.3-70b-versatile",
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
             "gemma2-9b-it",
-            "llama-3.1-8b-instant",
-            "llama3-70b-8192",
-            "llama3-8b-8192",
-            "mixtral-8x7b-32768",
+            "mistral-saba-24b",
+            "qwen-qwq-32b",
         ],
-        "openai": ["gpt-4o", "gpt-4o-mini"],
+        "openai": ["gpt-4.1-mini", "gpt-4.1", "gpt-4o", "o3-mini", "o4-mini"],
         "deepseek": ["deepseek-chat"],
     }
 
@@ -73,13 +74,50 @@ def main() -> None:  # noqa: C901
         index=0,
     )
 
+    # API Key input section
+    # st.sidebar.subheader("API Key (Optional)")
+    api_key_mapping = {
+        "groq": "GROQ_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "deepseek": "DEEPSEEK_API_KEY",
+    }
+    api_key_env_var = api_key_mapping.get(framework, "")
+    if api_key_env_var:
+        placeholder = "gsk-..." if framework == "groq" else "sk-..."
+        api_key = st.sidebar.text_input(
+            f"{api_key_env_var}", type="password", placeholder=placeholder
+        )
+        if api_key:
+            os.environ[api_key_env_var] = api_key
+
+            # Add test API connection button
+            if st.sidebar.button("Test API Connection"):
+                with st.sidebar.status("Testing API connection..."):
+                    try:
+                        # Create a minimal extractor to test API key validity
+                        test_extractor = create_extractor(model=f"{framework}/{model}")
+                        # Simple test query
+                        test_extractor.extract_from_query("SELECT 1")
+                        st.sidebar.success("✅ API connection successful!")
+                    except Exception as e:
+                        st.sidebar.error(f"❌ API connection failed: {e!s}")
+            else:
+                st.sidebar.success(f"✅ {api_key_env_var} set")
+
+        st.sidebar.info(
+            "API key will be used for this session only. "
+            "If not provided, the app will look for the key in environment variables."
+        )
+
     # Custom prompt file upload
+    st.sidebar.markdown("---")
     st.sidebar.subheader("Custom Prompt (Optional)")
     prompt_file = st.sidebar.file_uploader(
         "Upload custom prompt YAML file", type=["yml", "yaml"]
     )
 
     # Database connection section
+    st.sidebar.markdown("---")
     st.sidebar.subheader("Database Connection (Optional)")
     enable_db = st.sidebar.checkbox("Enable Database Schema Validation")
 
@@ -91,14 +129,46 @@ def main() -> None:  # noqa: C901
         )
         db_config["database"] = st.sidebar.text_input("Database Name")
         db_config["username"] = st.sidebar.text_input("Username")
+        db_config["password"] = st.sidebar.text_input(
+            "Password (Optional)", type="password"
+        )
         # Password is handled through .env or ~/.pgpass
         db_target_schemas = st.sidebar.text_input(
             "Target Schemas (comma-separated)", value="public"
         )
 
-        st.sidebar.info("Password should be set in .env as DB_PASSWORD or in ~/.pgpass")
+        # Add database test connection button
+        if (
+            db_config.get("host")
+            and db_config.get("database")
+            and db_config.get("username")
+        ) and st.sidebar.button("Test Database Connection"):
+            with st.sidebar.status("Testing database connection..."):
+                try:
+                    # Test database connection
+                    conn = PostgreSQLConnector(
+                        host=db_config["host"],
+                        port=db_config["port"],
+                        database=db_config["database"],
+                        username=db_config["username"],
+                        password=db_config.get("password")
+                        if db_config.get("password")
+                        else None,
+                    )
+                    # Just check if engine is available by executing a simple query
+                    with conn.engine.connect() as connection:
+                        connection.execute(text("SELECT 1"))
+                    st.sidebar.success("✅ Database connection successful!")
+                except Exception as e:
+                    st.sidebar.error(f"❌ Database connection failed: {e!s}")
+
+        st.sidebar.info(
+            "If password is not provided, it will be looked up in "
+            ".env as DB_PASSWORD or in ~/.pgpass"
+        )
 
     # SQL Input
+    st.sidebar.markdown("---")
     st.sidebar.subheader("SQL Input")
     input_method = st.sidebar.radio(
         "Choose input method",
@@ -144,7 +214,7 @@ def main() -> None:  # noqa: C901
                         temp_prompt_path = Path(temp_file.name)
 
                 extractor = create_extractor(
-                    framework=framework, model=model, prompt_path=temp_prompt_path
+                    model=f"{framework}/{model}", prompt_path=temp_prompt_path
                 )
 
                 # Extract dependencies
@@ -171,12 +241,15 @@ def main() -> None:  # noqa: C901
                     and db_config.get("username")
                 ):
                     try:
-                        # Password is retrieved from .env or ~/.pgpass
+                        # Use provided password or fall back to .env or ~/.pgpass
                         conn = PostgreSQLConnector(
                             host=db_config["host"],
                             port=db_config["port"],
                             database=db_config["database"],
                             username=db_config["username"],
+                            password=db_config.get("password")
+                            if db_config.get("password")
+                            else None,
                         )
                         target_schemas = [
                             schema.strip() for schema in db_target_schemas.split(",")
@@ -263,7 +336,7 @@ def main() -> None:  # noqa: C901
 
                     # Display as dataframe
                     if dependencies.to_dict()["dependencies"]:
-                        st.markdown("#### DataFrame")
+                        st.markdown("#### DataFrame View")
                         df = dependencies.to_dataframe()
                         st.dataframe(df, use_container_width=True)
 
@@ -305,18 +378,13 @@ def main() -> None:  # noqa: C901
 
                     if db_schema_match is not None and len(download_cols) > 2:
                         with download_cols[2]:
-                            # Add option to download just the validation matches
-                            matches_only = db_schema_match[
-                                db_schema_match["exact_match"]
-                            ]
-                            if not matches_only.empty:
-                                validation_csv = matches_only.to_csv(index=False)
-                                st.download_button(
-                                    label="Download Exact Matches",
-                                    data=validation_csv,
-                                    file_name="exact_matches.csv",
-                                    mime="text/csv",
-                                )
+                            db_csv = db_schema_match.to_csv(index=False)
+                            st.download_button(
+                                label="Download CSV with DB-schema-matching",
+                                data=db_csv,
+                                file_name="db_dependencies.csv",
+                                mime="text/csv",
+                            )
 
         except Exception as e:
             st.error(f"Error extracting dependencies: {e!s}")

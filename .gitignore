@@ -187,3 +187,4 @@ artifacts/
 # Ignore notebooks except target ones
 notebooks/*
 !notebooks/.gitkeep
+!notebooks/sqldeps_showcase.ipynb

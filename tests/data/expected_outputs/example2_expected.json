@@ -1,6 +1,6 @@
 {
     "dependencies": {
-        "users": ["*"]
+        "users": []
     },
     "outputs": {
         

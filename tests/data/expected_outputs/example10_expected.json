@@ -1,7 +1,7 @@
 {
     "dependencies": {
         "customers": ["customer_name", "id"],
-        "employees": ["*"],
+        "employees": [],
         "logs": [],
         "my_db.orders": ["order_date", "order_id", "total_amount"],
         "products": ["product_id", "product_name"],

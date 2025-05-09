@@ -22,10 +22,11 @@ class SQLProfile:
     def __post_init__(self) -> None:
         """Sort tables and columns for consistent output."""
         self.dependencies = {
-            table: sorted(cols) for table, cols in sorted(self.dependencies.items())
+            table: sorted(set(cols))
+            for table, cols in sorted(self.dependencies.items())
         }
         self.outputs = {
-            table: sorted(cols) for table, cols in sorted(self.outputs.items())
+            table: sorted(set(cols)) for table, cols in sorted(self.outputs.items())
         }
 
     @property

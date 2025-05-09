@@ -16,7 +16,7 @@ Where `PATH` is the path to a SQL file or directory containing SQL files.
 
 | Option | Description |
 |--------|-------------|
-| `--framework` | LLM framework to use (groq, openai, deepseek) |
+| `--framework` | LLM framework to use (litellm, groq, openai, deepseek) |
 | `--model` | Model name within the selected framework |
 | `--prompt` | Path to custom prompt YAML file |
 | `-r, --recursive` | Recursively scan folder for SQL files |
@@ -29,11 +29,11 @@ Where `PATH` is the path to a SQL file or directory containing SQL files.
 ## Basic Examples
 
 ```bash
-# Basic usage with default settings (groq/llama-3.3-70b-versatile)
+# Basic usage with default settings (litellm openai/gpt-4.1)
 sqldeps extract path/to/query.sql
 
 # Specify a different framework and model
-sqldeps extract path/to/query.sql --framework=openai --model=gpt-4o
+sqldeps extract path/to/query.sql --framework=openai --model=gpt-4.1-mini
 
 # Process all SQL files in a directory
 sqldeps extract path/to/sql_folder
