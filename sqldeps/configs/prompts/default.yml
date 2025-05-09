@@ -12,15 +12,21 @@ system_prompt: |
      - Tables MODIFIED with `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`.
      - Target columns in these operations.
 
+  GENERAL GUIDELINES:
+  - If a table must exist for the query to run without error, it is a dependency.
+  - If a table is created or modified by the query, it is an output.
+  - If a table must exist for the query to run without error AND is modified by the query, it is both a dependency and an output.
+  - Analyze dependencies and outputs in the context of the entire query, including inside CTEs, temp tables, and functions/procedures.
+
   OPERATION-SPECIFIC RULES:
   
   1. CREATE TABLE Operations:
      - New tables appear ONLY in OUTPUTS, not in dependencies.
      - For CREATE TABLE AS SELECT:
-       - If using SELECT * with no WHERE/condition clauses: Use ["*"] in outputs
+       - If using SELECT * with no WHERE/condition clauses: Use [] in outputs
          → Example: `CREATE TABLE new_table AS SELECT * FROM source_table`
-         → Dependencies: `{"source_table": ["*"]}`
-         → Outputs: `{"new_table": ["*"]}`
+         → Dependencies: `{"source_table": []}`
+         → Outputs: `{"new_table": []}`
        - If using explicit columns: List the specific columns in outputs
          → Example: `CREATE TABLE new_table AS SELECT col1, col2 FROM source_table`
          → Dependencies: `{"source_table": ["col1", "col2"]}`
@@ -31,18 +37,33 @@ system_prompt: |
        → Outputs: `{"new_table": ["col1", "col2"]}`
 
   2. INSERT Operations:
-     - Standard INSERT: Target table appears in BOTH dependencies and outputs with columns.
-       → Example: `INSERT INTO table_x (col1, col2) VALUES (1, 2)`
-       → Dependencies: `{"table_x": ["col1", "col2"]}`
-       → Outputs: `{"table_x": ["col1", "col2"]}`
-     - INSERT without column list: Use ["*"] to indicate all columns.
+     - For every INSERT operation, the target table (and its columns) must appear in BOTH dependencies and outputs, unless the table is created in the same query (in which case it should appear only in outputs).
+     - This applies even if the INSERT is inside a function, uses CTEs, or the table is schema-qualified or quoted.
+     - Example:
+       `INSERT INTO table_x (col1, col2) VALUES (1, 2)`
+       → Dependencies: {"table_x": ["col1", "col2"]}
+       → Outputs: {"table_x": ["col1", "col2"]}
+     - INSERT without column list: Use [] to indicate table usage.
        → Example: `INSERT INTO table_x SELECT * FROM table_y`
-       → Dependencies: `{"table_x": ["*"], "table_y": ["*"]}`
-       → Outputs: `{"table_x": ["*"]}`
+       → Dependencies: {"table_x": [], "table_y": []}
+       → Outputs: {"table_x": []}
      - INSERT with column list from SELECT *:
        → Example: `INSERT INTO table_x (col1, col2) SELECT * FROM table_y`
-       → Dependencies: `{"table_x": ["col1", "col2"], "table_y": ["*"]}`
-       → Outputs: `{"table_x": ["col1", "col2"]}`
+       → Dependencies: {"table_x": ["col1", "col2"], "table_y": []}
+       → Outputs: {"table_x": ["col1", "col2"]}
+     - If a table is TRUNCATEd and then INSERTed into, always include the columns from the INSERT in both dependencies and outputs (see TRUNCATE section for more details).
+     - Example (function, schema-qualified):
+       ```sql
+       CREATE OR REPLACE FUNCTION do_insert()
+       RETURNS void AS $$
+       BEGIN
+         TRUNCATE TABLE schema_x.target_table;
+         INSERT INTO schema_x.target_table (col1, col2) VALUES (1, 2);
+       END;
+       $$ LANGUAGE plpgsql;
+       ```
+       → Dependencies: {"schema_x.target_table": ["col1", "col2"]}
+       → Outputs: {"schema_x.target_table": ["col1", "col2"]}
 
   3. UPDATE/DELETE Operations:
      - Table appears in BOTH dependencies and outputs.
@@ -126,8 +147,8 @@ system_prompt: |
      - For non-schema-qualified tables, do NOT add any schema prefix.
      - Tables with same name but different schemas are treated as distinct entities.
      - Example: `INSERT INTO schema_a.table_x SELECT col1 FROM table_y JOIN schema_b.table_x`
-       → Dependencies: `{"schema_a.table_x": ["*"], "table_y": ["col1"], "schema_b.table_x": ["*"]}`
-       → Outputs: `{"schema_a.table_x": ["*"]}`
+       → Dependencies: `{"schema_a.table_x": [], "table_y": ["col1"], "schema_b.table_x": []}`
+       → Outputs: `{"schema_a.table_x": []}`
 
   3. CTE (Common Table Expressions):
      - CTEs are temporary structures and are NOT included as dependencies or outputs.
@@ -137,8 +158,8 @@ system_prompt: |
        WITH cte AS (SELECT * FROM table_x)
        INSERT INTO table_y SELECT * FROM cte
        ```
-       → Dependencies: `{"table_x": ["*"], "table_y": ["*"]}`
-       → Outputs: `{"table_y": ["*"]}`
+       → Dependencies: `{"table_x": [], "table_y": []}`
+       → Outputs: `{"table_y": []}`
 
   4. FUNCTIONS & STORED PROCEDURES:
      - Analyze SQL statements inside functions/procedures and return dependencies and outputs.
@@ -154,8 +175,8 @@ system_prompt: |
          END;
          $$ LANGUAGE plpgsql;
          ```
-         → Dependencies: `{"statistics": ["*"], "raw_data": ["*"]}`
-         → Outputs: `{"statistics": ["*"]}`
+         → Dependencies: `{"statistics": [], "raw_data": []}`
+         → Outputs: `{"statistics": []}`
        → Function with table creation:
          ```sql
          CREATE OR REPLACE FUNCTION create_report()
@@ -166,8 +187,8 @@ system_prompt: |
          END;
          $$ LANGUAGE plpgsql;
          ```
-         → Dependencies: `{"source": ["*"]}`
-         → Outputs: `{"reports.daily": ["*"]}`
+         → Dependencies: `{"source": []}`
+         → Outputs: `{"reports.daily": []}`
        → Function with INSERT:
          ```sql
          CREATE OR REPLACE FUNCTION update_sales()
@@ -190,23 +211,24 @@ system_prompt: |
        CREATE TABLE new_version AS SELECT * FROM staging;
        COMMIT;
        ```
-       → Dependencies: `{"old_version": [], "staging": ["*"]}`
-       → Outputs: `{"new_version": ["*"]}`
+       → Dependencies: `{"old_version": [], "staging": []}`
+       → Outputs: `{"new_version": []}`
 
   COLUMN HANDLING:
-  - GENERAL PRINCIPLE: Use ["*"] only when no specific columns are mentioned or when a wildcard is used. Otherwise, list specific columns.
+  - GENERAL PRINCIPLE: Use [] only when no specific columns are mentioned or when a wildcard is used. Otherwise, list specific columns.
   
   - For SELECT statements:
-    - `SELECT *` → Use ["*"]
+    - `SELECT *` → Use []
     - `SELECT column1, column2` → Include only the named columns
-    - `SELECT COUNT(*) FROM table` (no WHERE/GROUP BY) → Use ["*"] in dependencies
+    - `SELECT COUNT(*) FROM table` (no WHERE/GROUP BY) → Use [] in dependencies
     - `SELECT COUNT(*) FROM table WHERE column1 = value` → Only include specific columns in conditions: ["column1"]
     - `SELECT COUNT(*), column1 FROM table GROUP BY column1` → Only include named columns: ["column1"]
     
   - For aggregate functions:
-    - Only include columns explicitly referenced in the query, not "*" unless specifically using SELECT *
+    - Only include columns explicitly referenced in the query
+    - If no columns are referenced, use [] in dependencies
     - Examples:
-      → `SELECT COUNT(*) FROM orders` → Dependencies: `{"orders": ["*"]}`
+      → `SELECT COUNT(*) FROM orders` → Dependencies: `{"orders": []}`
       → `SELECT user_id, COUNT(*) FROM orders GROUP BY user_id` → Dependencies: `{"orders": ["user_id"]}`
       → `SELECT COUNT(*) FROM orders WHERE user_id = 1` → Dependencies: `{"orders": ["user_id"]}`
   
@@ -214,7 +236,7 @@ system_prompt: |
     - List only the specific columns used in dependencies
     - List only the specific columns modified in outputs
     - Example: `UPDATE users SET status = 'active' WHERE id = 1`
-      → Dependencies: `{"users": ["id"]}`
+      → Dependencies: `{"users": ["id", "status"]}`
       → Outputs: `{"users": ["status"]}`
 
   OUTPUT JSON FORMAT:
