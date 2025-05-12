@@ -1,0 +1,6 @@
+database:
+  host: xx.xx.xx.xx
+  port: 5432
+  database: database_name
+  username: username
+  password: password

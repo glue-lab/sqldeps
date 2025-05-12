@@ -340,6 +340,7 @@ class BaseSQLExtractor(ABC):
             # Convert result into a dictionary
             result = json.loads(response)
 
+            # Check if required keys are present
             if "dependencies" not in result or "outputs" not in result:
                 raise ValueError(
                     "Missing required keys ('dependencies', 'outputs') in the response."

@@ -65,7 +65,7 @@ pip install "sqldeps[app]"
 pip install "sqldeps[dataviz]"
 
 # Install all optional dependencies
-pip install "sqldeps[app,dataviz]"
+pip install "sqldeps[app,postgres,dataviz]"
 ```
 
 ## Quick Start
@@ -79,7 +79,7 @@ SQLDeps provides both API and CLI interfaces:
 ```python
 from sqldeps.llm_parsers import create_extractor
 
-# Create extractor with default settings (framework="groq", model="llama-3.3-70b-versatile")
+# Create extractor with default settings (framework="litellm", model="openai/gpt-4.1")
 extractor = create_extractor()
 
 # Extract dependencies and outputs from a SQL query
@@ -118,7 +118,7 @@ df_format = result.to_dataframe()
 sqldeps extract path/to/query.sql
 
 # Specify framework and output format
-sqldeps extract path/to/query.sql --framework=openai --model=gpt-4o -o results.json
+sqldeps extract path/to/query.sql --framework=openai --model=gpt-4.1-mini -o results.json
 
 # Scan a folder recursively with intelligent parallelization
 sqldeps extract \
@@ -202,6 +202,7 @@ You'll need to set up API keys for your chosen LLM provider. Create a `.env` fil
 GROQ_API_KEY=your_groq_api_key
 OPENAI_API_KEY=your_openai_api_key
 DEEPSEEK_API_KEY=your_deepseek_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # Database credentials (for schema validation)
 DB_HOST=localhost
@@ -224,7 +225,7 @@ from sqldeps.database import PostgreSQLConnector
 from sqldeps.llm_parsers import create_extractor
 
 # Extract dependencies
-extractor = create_extractor(framework="openai", model="gpt-4o")
+extractor = create_extractor(model="openai/gpt-4.1-mini")
 result = extractor.extract_from_file('query.sql')
 
 # Connect to database and validate
@@ -265,8 +266,7 @@ You can customize the prompts used to instruct the LLM:
 ```python
 # Create extractor with custom prompt
 extractor = create_extractor(
-    framework="groq",
-    model="llama-3.3-70b-versatile",
+    model="groq/llama-3.3-70b-versatile",
     prompt_path="path/to/custom_prompt.yml"
 )
 ```

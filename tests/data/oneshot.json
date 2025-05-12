@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "schema1.users": ["user_id", "username", "status", "*", "registration_date"],
+    "schema1.orders": ["user_id", "order_id", "order_date", "total_amount", "customer_id"],
+    "schema1.order_items": ["order_id", "product_id", "quantity", "order_date"],
+    "schema1.products": ["product_id", "product_name", "category", "current_stock", "stock_status", "last_updated"],
+    "schema2.customer_metrics": ["customer_id", "monthly_order_count", "monthly_spend", "last_updated"],
+    "schema2.audit_logs": [],
+    "schema2.daily_summary": []
+  },
+  "outputs": {
+    "schema2.customer_metrics": ["customer_id", "monthly_order_count", "monthly_spend", "last_updated"],
+    "schema2.audit_logs": [],
+    "schema2.daily_summary": ["date", "total_orders", "total_revenue", "avg_order_value"],
+    "schema1.products": ["stock_status", "last_updated"],
+    "schema2.monthly_report": ["month", "category", "order_count", "customer_count", "total_items_sold", "total_revenue"]
+  }
+}

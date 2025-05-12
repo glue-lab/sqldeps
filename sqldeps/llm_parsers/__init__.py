@@ -11,19 +11,21 @@ from dotenv import load_dotenv
 from .base import BaseSQLExtractor
 from .deepseek import DeepseekExtractor
 from .groq import GroqExtractor
+from .litellm import LiteLlmExtractor
 from .openai import OpenaiExtractor
 
 load_dotenv()
 
 DEFAULTS = {
+    "litellm": {"class": LiteLlmExtractor, "model": "openai/gpt-4.1"},
     "groq": {"class": GroqExtractor, "model": "llama-3.3-70b-versatile"},
-    "openai": {"class": OpenaiExtractor, "model": "gpt-4o"},
+    "openai": {"class": OpenaiExtractor, "model": "gpt-4.1"},
     "deepseek": {"class": DeepseekExtractor, "model": "deepseek-chat"},
 }
 
 
 def create_extractor(
-    framework: str = "groq",
+    framework: str = "litellm",
     model: str | None = None,
     params: dict | None = None,
     prompt_path: Path | None = None,
@@ -31,7 +33,10 @@ def create_extractor(
     """Create an appropriate SQL extractor based on the specified framework.
 
     Args:
-        framework: The LLM framework to use ("groq", "openai", or "deepseek")
+        framework: The LLM framework to use ("litellm", "groq", "openai", or "deepseek")
+            Note: Direct framework options are maintained for backward compatibility,
+            but "litellm" is recommended as it provides integrations for all models
+            from multiple providers
         model: The model name within the selected framework (uses default if None)
         params: Additional parameters to pass to the LLM API
         prompt_path: Path to a custom prompt YAML file
@@ -56,4 +61,10 @@ def create_extractor(
     return extractor_class(model=model_name, params=params, prompt_path=prompt_path)
 
 
-__all__ = ["DeepseekExtractor", "GroqExtractor", "OpenaiExtractor", "create_extractor"]
+__all__ = [
+    "DeepseekExtractor",
+    "GroqExtractor",
+    "LiteLlmExtractor",
+    "OpenaiExtractor",
+    "create_extractor",
+]

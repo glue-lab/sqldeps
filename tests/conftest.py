@@ -25,8 +25,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--framework",
         action="store",
-        default="groq",
-        help="Specify the framework to use (openai, groq, deepseek)",
+        default="litellm",
+        help="Specify the framework to use (litellm, openai, groq, deepseek)",
     )
     parser.addoption(
         "--model",
@@ -56,6 +56,26 @@ def pytest_configure(config: pytest.Config) -> None:
         "markers", "integration: mark tests that integrate with external services"
     )
     config.addinivalue_line("markers", "slow: mark tests that are slow to execute")
+
+
+def pytest_collection_modifyitems(
+    items: list[pytest.Item], config: pytest.Config
+) -> None:
+    """Skip slow tests when only llm marker is specified."""
+    # Get the value of -m if specified
+    markexpr = config.getoption("-m", default="")
+
+    # Check if "llm" is specified but "slow" is not
+    if "llm" in markexpr and "slow" not in markexpr:
+        skip_marker = pytest.mark.skip(
+            reason=(
+                "Slow tests are skipped by default. Use -m 'llm and slow' to run them."
+            )
+        )
+        for item in items:
+            # If the test has both llm and slow markers, skip it
+            if "slow" in item.keywords and "llm" in item.keywords:
+                item.add_marker(skip_marker)
 
 
 @pytest.fixture

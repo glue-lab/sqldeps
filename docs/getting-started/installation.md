@@ -23,7 +23,7 @@ pip install "sqldeps[app]"
 pip install "sqldeps[dataviz]"
 
 # Install all optional dependencies
-pip install "sqldeps[app,dataviz]"
+pip install "sqldeps[app,postgres,dataviz]"
 ```
 
 ## Setup API Keys
@@ -39,6 +39,7 @@ Create a `.env` file in your project root with your API keys:
 GROQ_API_KEY=your_groq_api_key
 OPENAI_API_KEY=your_openai_api_key
 DEEPSEEK_API_KEY=your_deepseek_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # Optional: Database credentials (for schema validation)
 DB_HOST=localhost

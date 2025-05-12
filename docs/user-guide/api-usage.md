@@ -9,7 +9,7 @@ The main entry point for using SQLDeps is the `create_extractor()` function:
 ```python
 from sqldeps.llm_parsers import create_extractor
 
-# Create extractor with default settings (framework="groq", model="llama-3.3-70b-versatile")
+# Create extractor with default settings (framework="litellm", model="openai/gpt-4.1")
 extractor = create_extractor()
 
 # Specify a different framework and model
@@ -20,8 +20,8 @@ extractor = create_extractor(
 
 # Specify additional parameters for the LLM
 extractor = create_extractor(
-    framework="groq",
-    model="llama-3.3-70b-versatile",
+    framework="litellm",
+    model="openai/gpt-4.1-mini",
     params={"temperature": 0.1}
 )
 

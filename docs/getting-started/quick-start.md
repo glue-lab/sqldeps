@@ -7,7 +7,7 @@ SQLDeps provides both API and CLI interfaces for extracting dependencies from SQ
 ```python
 from sqldeps.llm_parsers import create_extractor
 
-# Create extractor with default settings (framework="groq", model="llama-3.3-70b-versatile")
+# Create extractor with default settings (framework="litellm", model="openai/gpt-4.1")
 extractor = create_extractor()
 
 # Extract dependencies and outputs from a SQL query
@@ -46,7 +46,7 @@ df_format = result.to_dataframe()
 sqldeps extract path/to/query.sql
 
 # Specify framework and output format
-sqldeps extract path/to/query.sql --framework=openai --model=gpt-4o -o results.json
+sqldeps extract path/to/query.sql --framework=litellm --model=gpt-4.1-mini -o results.json
 
 # Scan a folder recursively with intelligent parallelization
 sqldeps extract \
