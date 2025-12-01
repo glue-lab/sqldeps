@@ -9,12 +9,15 @@ from dataclasses import dataclass
 import pandas as pd
 
 
+FUNC_TYPE_LITERAL = ":function"
+
+
 @dataclass
 class SQLProfile:
     """Data class to hold both SQL dependencies and outputs."""
 
     # Dependencies (input tables/columns required by the query)
-    dependencies: dict[str, list[str]]
+    dependencies: dict[str, list[str] | str]
 
     # Outputs (tables/columns created or modified by the query)
     outputs: dict[str, list[str]]
@@ -22,11 +25,12 @@ class SQLProfile:
     def __post_init__(self) -> None:
         """Sort tables and columns for consistent output."""
         self.dependencies = {
-            table: sorted(set(cols))
+            table: FUNC_TYPE_LITERAL if cols == FUNC_TYPE_LITERAL else sorted(set(cols))
             for table, cols in sorted(self.dependencies.items())
         }
         self.outputs = {
-            table: sorted(set(cols)) for table, cols in sorted(self.outputs.items())
+            table: FUNC_TYPE_LITERAL if cols == FUNC_TYPE_LITERAL else sorted(set(cols))
+            for table, cols in sorted(self.outputs.items())
         }
 
     @property
@@ -66,7 +70,7 @@ class SQLProfile:
         # Add dependencies
         for table, columns in self.dependencies.items():
             schema, table_name = table.split(".") if "." in table else (None, table)
-            if columns:
+            if columns and columns != FUNC_TYPE_LITERAL:
                 for column in columns:
                     records.append(
                         {
@@ -76,6 +80,15 @@ class SQLProfile:
                             "column": column,
                         }
                     )
+            elif columns and columns == FUNC_TYPE_LITERAL:
+                records.append(
+                    {
+                        "type": "dependency",
+                        "schema": schema,
+                        "table": table_name,
+                        "column": FUNC_TYPE_LITERAL,
+                    }
+                )
             else:
                 records.append(
                     {
@@ -89,7 +102,7 @@ class SQLProfile:
         # Add outputs
         for table, columns in self.outputs.items():
             schema, table_name = table.split(".") if "." in table else (None, table)
-            if columns:
+            if columns and columns != FUNC_TYPE_LITERAL:
                 for column in columns:
                     records.append(
                         {
@@ -99,6 +112,15 @@ class SQLProfile:
                             "column": column,
                         }
                     )
+            elif columns and columns == FUNC_TYPE_LITERAL:
+                records.append(
+                    {
+                        "type": "outcome",
+                        "schema": schema,
+                        "table": table_name,
+                        "column": FUNC_TYPE_LITERAL,
+                    }
+                )
             else:
                 records.append(
                     {
